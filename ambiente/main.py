@@ -1,45 +1,46 @@
-from umqtt.simple import MQTTClient
-from machine import Pin
-import ubinascii
 import machine
 import micropython
+import socket
+import array
 
 # Channels: '0123'
 # 0 green
 # 1 red
 # 2 blue
 # 3 white
-pins = [Pin(v, Pin.OUT, value=1) for v in [0,2,4,5]]
+pins = [machine.Pin(v, machine.Pin.OUT, value=1) for v in [0,2,4,5]]
 pwms = [machine.PWM(pin, freq=1000, duty=512) for pin in pins]
 
+def osc_listen(callback):
+    # Create a TCP/IP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-# Default MQTT server to connect to
-SERVER = "optilux"
-CLIENT_ID = ubinascii.hexlify(machine.unique_id())
-TOPIC = b"ambiente"
-
-state = 0
-
-def sub_cb(topic, msg):
-    print((topic, msg))
-    for i in range(4):
-        pwms[i].duty(msg[i]*4)
-
-
-def main(server=SERVER):
-    c = MQTTClient(CLIENT_ID, server)
-    # Subscribed messages will be delivered to this callback
-    c.set_callback(sub_cb)
-    c.connect()
-    c.subscribe(TOPIC)
-    print("Connected to %s, subscribed to %s topic" % (server, TOPIC))
-
+    # Bind the socket to the port
+    server_address = ('0.0.0.0', 9000)
+    print('starting up on %s port %s' % server_address)
+    sock.bind(server_address)
     try:
-        while 1:
-            #micropython.mem_info()
-            c.wait_msg()
+        while True:
+            data, _ = sock.recvfrom(64)
+            universe_end = data.find(b'/', 1)
+            universe = int(data[1:universe_end])
+            channel_end = data.find(b'\x00')
+            channel = int(data[universe_end+5:channel_end])
+            value = bytearray()
+            value.append(data[-1])
+            value.append(data[-2])
+            value.append(data[-3])
+            value.append(data[-4])
+            value = array.array('f', value)[0]
+            print(data[-4:])
+            callback(universe, channel, value)
     finally:
-        c.disconnect()
+        sock.close()
+
+def callback(universe, channel, value):
+    print((universe, channel, value))  # TODO deleteme
+    pwms[channel].duty(int(value*1024))
+
 
 if __name__ == '__main__':
-    main()
+    osc_listen(callback)
