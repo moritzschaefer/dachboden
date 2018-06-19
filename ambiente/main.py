@@ -38,9 +38,9 @@ def osc_listen(callback):
         sock.close()
 
 def callback(universe, channel, value):
-    print((universe, channel, value))  # TODO deleteme
     pwms[channel].duty(int(value*1024))
 
 
 if __name__ == '__main__':
     osc_listen(callback)
+

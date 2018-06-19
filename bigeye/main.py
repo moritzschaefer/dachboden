@@ -1,45 +1,55 @@
-from umqtt.simple import MQTTClient
 from machine import Pin
 import ubinascii
 import machine
+import socket
+import array
 import micropython
 import neopixel
 
+# LED sripe has 27 RGB LEDs
 leds = neopixel.NeoPixel(machine.Pin(5, machine.Pin.OUT), 27)
- 
-# Default MQTT server to connect to
-SERVER = "optilux"
-CLIENT_ID = ubinascii.hexlify(machine.unique_id())
-TOPIC = b"bigeye"
-
-state = 0
-
-def sub_cb(topic, msg):
-    print((topic, msg))
-    for i in range(27):
-        leds[i] = (msg[i*3], msg[i*3+1], msg[i*3+2])
-    leds.write()
         
-
 def main(server=SERVER):
     #default light on
     for i in range(27):
         leds[i] = (256,150,150)
     leds.write()
+    osc_listen(callback)
 
-    c = MQTTClient(CLIENT_ID, server)
-    # Subscribed messages will be delivered to this callback
-    c.set_callback(sub_cb)
-    c.connect()
-    c.subscribe(TOPIC)
-    print("Connected to %s, subscribed to %s topic" % (server, TOPIC))
+def osc_listen(callback):
+    # Create a TCP/IP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+    # Bind the socket to the port
+    server_address = ('0.0.0.0', 9000)
+    print('starting up on %s port %s' % server_address)
+    sock.bind(server_address)
     try:
-        while 1:
-            #micropython.mem_info()
-            c.wait_msg()
+        while True:
+            data, _ = sock.recvfrom(64)
+            universe_end = data.find(b'/', 1)
+            universe = int(data[1:universe_end])
+            channel_end = data.find(b'\x00')
+            channel = int(data[universe_end+5:channel_end])
+            value = bytearray()
+            value.append(data[-1])
+            value.append(data[-2])
+            value.append(data[-3])
+            value.append(data[-4])
+            value = array.array('f', value)[0]
+            print(data[-4:])
+            callback(universe, channel, value)
     finally:
-        c.disconnect()
+        sock.close()
+
+def callback(universe, channel, value):
+    print((universe, channel, value))  # TODO deleteme
+
+    tmp = list(leds[channel//3])
+    tmp[channel%3] = value
+    leds[channel//3] = tuple(tmp) 
+
+    leds.write()
 
 if __name__ == '__main__':
     main()
