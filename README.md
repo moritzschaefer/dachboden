@@ -1,4 +1,9 @@
 # dachboden
+Each microcontroller is controlled by the Open Sound Control (OSC) protocol.
+The protocol is used so that Sylwan can control the microcontroller with the [QLC+](https://github.com/mcallegari/qlcplus "QLC+") program.
+To do this, each microcontroller must first be flashed with [Micropython](https://github.com/micropython/micropython/ "Micropython").
+After flashing, the microcontroller is assigned a static IP with the Fritzbox.
+If the IP is known, [WEBREPL](https://github.com/micropython/webrepl "WEBREPL") can be used to access the microcontroller and a program can be transferred.
 
 ## WebREPL
 
