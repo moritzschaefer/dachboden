@@ -8,13 +8,15 @@ import neopixel
 
 # LED sripe has 27 RGB LEDs
 leds = neopixel.NeoPixel(machine.Pin(5, machine.Pin.OUT), 27)
-        
-def main(server=SERVER):
+
+
+def main():
     #default light on
     for i in range(27):
         leds[i] = (256,150,150)
     leds.write()
     osc_listen(callback)
+
 
 def osc_listen(callback):
     # Create a TCP/IP socket
@@ -42,14 +44,16 @@ def osc_listen(callback):
     finally:
         sock.close()
 
+
 def callback(universe, channel, value):
     print((universe, channel, value))  # TODO deleteme
 
     tmp = list(leds[channel//3])
-    tmp[channel%3] = value
-    leds[channel//3] = tuple(tmp) 
+    tmp[channel % 3] = value
+    leds[channel // 3] = tuple(tmp)
 
     leds.write()
+
 
 if __name__ == '__main__':
     main()
