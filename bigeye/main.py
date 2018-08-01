@@ -1,4 +1,3 @@
-from machine import Pin
 import ubinascii
 import machine
 import socket
@@ -39,14 +38,12 @@ def osc_listen(callback):
             value.append(data[-3])
             value.append(data[-4])
             value = array.array('f', value)[0]
-            print(data[-4:])
             callback(universe, channel, value)
     finally:
         sock.close()
 
 
 def callback(universe, channel, value):
-    print((universe, channel, value))  # TODO deleteme
 
     tmp = list(leds[channel//3])
     tmp[channel % 3] = int(value*255)
