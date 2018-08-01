@@ -1,7 +1,6 @@
 '''
 This script glows by default and once an OSC packet comes in, it only shows what is sent by OSC
 '''
-
 import machine
 import neopixel
 from math import sin
@@ -85,7 +84,7 @@ def main():
 def callback(universe, channel, value):
     # print((universe, channel, value))
     tmp = list(np[channel//3])
-    tmp[channel%3] = value
+    tmp[channel%3] = int(value*255)
     np[channel//3] = tuple(tmp)
     np.write()
 

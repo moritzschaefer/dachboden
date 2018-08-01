@@ -49,7 +49,7 @@ def callback(universe, channel, value):
     print((universe, channel, value))  # TODO deleteme
 
     tmp = list(leds[channel//3])
-    tmp[channel % 3] = value
+    tmp[channel % 3] = int(value*255)
     leds[channel // 3] = tuple(tmp)
 
     leds.write()

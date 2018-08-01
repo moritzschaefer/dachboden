@@ -38,7 +38,7 @@ def osc_listen(callback):
         sock.close()
 
 def callback(universe, channel, value):
-    pwms[channel].duty(int(value*1024))
+    pwms[channel].duty(int(value*1023))
 
 
 if __name__ == '__main__':
