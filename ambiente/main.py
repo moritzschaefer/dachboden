@@ -10,6 +10,11 @@ import array
 # 3 white
 pins = [machine.Pin(v, machine.Pin.OUT, value=1) for v in [0,2,4,5]]
 pwms = [machine.PWM(pin, freq=1000, duty=512) for pin in pins]
+pwms[0].duty(700)
+pwms[1].duty(100)
+pwms[2].duty(300)
+pwms[3].duty(200)
+
 
 def osc_listen(callback):
     # Create a TCP/IP socket
