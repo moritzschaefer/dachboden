@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Jurtenpage</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="author" content="Moritz Schaefer">
+    <link rel="stylesheet" href="static/bootstrap.min.css">
+
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}">
+
+
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+
+
+  </head>
+  <body>
+    <h2>Strobe Painter</h2>
+    <div id="#message" class="hide"></div>
+    <label for="selector">Öffne ein altes Werk</label>
+    <select name="selector" id="selector">
+      {% for entry in names %}
+      <option value="{{entry.filename}}">{{entry.name}}</option>
+      {% endfor %}
+    </select>
+    <label for="artname">Wie willst du dein Kunstwerk nennen?</label>
+    <input type="text" name="artname" id="artname" value="tippmal"></input>
+    <input type="color" id="color" value="#000000"></input>
+    <div id="strobe">
+    </div>
+    <div id="submit" class="btn">Let it glow</div>
+    <div id="clear" class="btn">Clear</div>
+
+
+    <script src="static/jquery.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="static/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="{{ url_for('static', filename='main.js') }}" type="text/javascript" charset="utf-8"></script>
+
+  </body>
+</html>
+
+

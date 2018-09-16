@@ -1,0 +1,41 @@
+
+or canvas?
+
+
+click function!
+
+One div for one container
+
+onmouse, onhover, if a div is hovered switch its color
+
+
+mouseover on touch devices using jquerg
+
+
+div -> onclick -> toggle
+buttons:
+add col. just copy the last col and rename all the ids
+delete col. if only one remaining then DONT DO IT
+clear
+
+functions:
+serialize() -> read
+
+
+
+<div class="col" id="col1">
+  <div class="cell" id="cell1_1></div>
+  ...
+</div>
+
+
+
+CSS:
+
+.cell.active{
+  background-color: white;
+}
+
+.cell {
+  background-color: black;
+}
