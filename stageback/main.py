@@ -25,15 +25,21 @@ class ShiftRegister:
     def set_all(self, buf):
         ''' buf needs to be a byte string'''
         self.data = bytearray(buf)
+        while len(self.data) < 3:
+            self.data.append(0)
         self._shift()
 
     def set_one(self, number, value):
-        if value:
-            self.data[number // 8] = self.data[number // 8] | (1 << (number % 8))
+        try:
+            if value:
+                self.data[number // 8] = self.data[number // 8] | (1 << (number % 8))
+            else:
+                self.data[number // 8] = self.data[number //
+                                                  8] & (0xff ^ (1 << (number % 8)))
+        except IndexError:
+            print('channel (number) too high')
         else:
-            self.data[number // 8] = self.data[number //
-                                              8] & (0xff ^ (1 << (number % 8)))
-        self._shift()
+            self._shift()
 
     def _shift(self):
         self.spi.write(self.data)

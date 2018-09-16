@@ -22,6 +22,7 @@ in the webrepl dir to access webrepl
 - 192.168.178.170: ESP-239C3D ambiente
 - 192.168.178.73: ESP-0213EF sternenhimmel
 - 192.168.178.151: ESP-239663 bigeye
+- ...: ESP_E1A34B stageback
 
 
 REPL Password: incubator
