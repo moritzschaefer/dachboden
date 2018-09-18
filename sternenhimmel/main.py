@@ -1,7 +1,6 @@
 '''
 This script glows by default and once an OSC packet comes in, it only shows what is sent by OSC
 '''
-
 import machine
 import neopixel
 from math import sin
@@ -10,16 +9,27 @@ import uos
 import socket
 import array
 
-# Channels: 150
+# Channels: 151
 
-# 0,1,2 RGB Pixel 0
-# 3,4,5 RGB Pixel 1
+# 0 mode
+# 1,2,3 RGB Pixel 0
+# 4,5,6 RGB Pixel 1
 # ...
 
 
 PIXELS = 50
 
 np = neopixel.NeoPixel(machine.Pin(2), PIXELS)
+
+SINGLE_COLOR_MODE = 0  # use the first three channels to set RGB for all
+GLOW_MODE = 1  # glow as without inputs
+MULTI_COLOR_MODE = 2  # use the first 150 channels to control single leds
+
+
+mode = SINGLE_COLOR_MODE
+changed = None
+rgb = [0, 0, 0]
+
 
 def rand():
     return int.from_bytes(uos.urandom(1), 'little')
@@ -39,7 +49,9 @@ class Star:
 
 stars = [Star() for _ in range(PIXELS)]
 
+
 def main():
+    global mode, changed, rgb
     t0 = utime.ticks_ms()
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -55,17 +67,25 @@ def main():
         try:
             data, _ = sock.recvfrom(64)
         except OSError:  # timeout!!
-            t = (utime.ticks_ms() - t0) / 100000
-            for i in range(PIXELS):
-                np[i] = stars[i].step(t)
-            np.write()
+            if mode == GLOW_MODE:
+                t = (utime.ticks_ms() - t0) / 100000
+                for i in range(PIXELS):
+                    np[i] = stars[i].step(t)
+                np.write()
+            elif mode == MULTI_COLOR_MODE:
+                np.write()
+            elif mode == SINGLE_COLOR_MODE:
+                if changed:
+                    for i in range(PIXELS):
+                        np[i] = tuple(rgb)
+                    np.write()
+                    changed = False
+
+        except Exception as e:
+            print(e)
+            sock.close()
+            break
         else:
-            break  # go out of the for loop!
-
-    sock.settimeout(None)
-
-    try:
-        while True:
             universe_end = data.find(b'/', 1)
             universe = int(data[1:universe_end])
             channel_end = data.find(b'\x00')
@@ -77,17 +97,22 @@ def main():
             value.append(data[-4])
             value = array.array('f', value)[0]
             callback(universe, channel, value)
-            data, _ = sock.recvfrom(64)
-    finally:
-        sock.close()
 
 
 def callback(universe, channel, value):
-    # print((universe, channel, value))
-    tmp = list(np[channel//3])
-    tmp[channel%3] = value
-    np[channel//3] = tuple(tmp)
-    np.write()
+    global mode, changed, rgb
+    if channel == 0:
+        mode = round(value * 255) % 3  # must not exceed 2
+    else:
+        channel -= 1
+        if mode == MULTI_COLOR_MODE:
+            tmp = list(np[channel//3])
+            tmp[channel%3] = int(value*255)
+            np[channel//3] = tuple(tmp)
+        elif mode == SINGLE_COLOR_MODE:
+            rgb[channel % 3] = int(value*255)
+            changed = True
+
 
 if __name__ == "__main__":
     main()

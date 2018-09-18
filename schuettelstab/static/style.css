@@ -1,0 +1,22 @@
+
+.hide {
+  visibility: hidden;
+}
+
+.column {
+  display: inline;
+  float: left;
+  position: relative;
+}
+
+.pixel {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border: 1px black;
+  margin: 2px;
+  background-color: black;
+}
+.pixel.active {
+  background-color: white;
+}
