@@ -1,3 +1,6 @@
 [submodule "webrepl"]
 	path = webrepl
 	url = https://github.com/micropython/webrepl
+[submodule "kickercam"]
+	path = kickercam
+	url = git@github.com:moritzschaefer/kickercam.git

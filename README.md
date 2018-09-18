@@ -1,11 +1,11 @@
-# dachboden
+# Dachboden
 In the Dachboden there are currently four microcontroller and two Linux projects.
 
 ## Microcontroller
 The 32-bit microcontroller ESP8266 is used with the operating system [NodeMCU](https://de.wikipedia.org/wiki/NodeMCU) on which the Python3 environment [Micropython](https://github.com/micropython/micropython/ "Micropython") is installed.
 Each microcontroller is communicates with the Open Sound Control (OSC) protocol.
 The protocol is used so that the microcontroller can be controlled with the [QLC+](https://github.com/mcallegari/qlcplus "QLC+") program.
-After flashing and installing micrpython, the microcontroller gets assigned a static IP from the Fritzbox.
+After flashing and installing micropython, the microcontroller gets assigned a static IP from the Fritzbox.
 If the IP is known, [WEBREPL](https://github.com/micropython/webrepl "WEBREPL") can be used to access the microcontroller and a program can be transferred.
 
 ### Ambiente
