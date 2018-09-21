@@ -6,7 +6,27 @@ The 32-bit microcontroller ESP8266 is used with the operating system [NodeMCU](h
 Each microcontroller is communicates with the Open Sound Control (OSC) protocol.
 The protocol is used so that the microcontroller can be controlled with the [QLC+](https://github.com/mcallegari/qlcplus "QLC+") program.
 After flashing and installing micropython, the microcontroller gets assigned a static IP from the Fritzbox.
-If the IP is known, [WEBREPL](https://github.com/micropython/webrepl "WEBREPL") can be used to access the microcontroller and a program can be transferred.
+If the IP is known, [WEBREPL](https://github.com/micropython/webrepl "WEBREPL") (Read-eval-print loop) can be used to access the microcontroller and a program can be transferred.
+
+The main program is called main and is started automatically after the restart.
+All files are located in the root folder. If the microcontroller outputs strange characters, either the baud rate is set incorrectly or a program is running and must be terminated with CTRL+C.
+
+If you are using Mac OS High Sierra, the [driver](https://github.com/esp8266/Arduino/issues/732 "driver") must be installed.
+
+
+### WebREPL
+
+Run
+
+    git submodule init && git submodule update
+
+to initialize the webrepl directory access. Use
+
+    python -m http.server
+
+in the webrepl dir to access webrepl
+
+REPL Password: incubator
 
 ### Ambiente
 The Ambience project is there to illuminate simple LED strips in the Dachboden.
@@ -40,25 +60,13 @@ To connect to Raspberry PI
 
    ssh pi@192.168.42.1
    
-Password: raspberry
+Password: raspberry or Raspberry
 
 ### Kickercam
 The Kickercam transmits a live transmission of the Kicker to a screen.
 The corresponding program is written with Python and runs on a Raspberry PI or on a laptop.
 The laptop is more advantageous, because the calculation is carried out fast enough there.
 In addition to the live transmission, the goal shot is detected.
-
-## WebREPL
-
-Run
-
-    git submodule init && git submodule update
-
-to initialize the webrepl directory access. Use
-
-    python -m http.server
-
-in the webrepl dir to access webrepl
 
 ## IPs
 
