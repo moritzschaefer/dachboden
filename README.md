@@ -28,6 +28,29 @@ in the webrepl dir to access webrepl
 
 REPL Password: incubator
 
+### Set up device
+If there are tools or files missing, look at the well documentation https://docs.micropython.org/en/latest/esp8266/esp8266/tutorial/network_basics.html
+
+#### Flashing device
+    $ esptool.py --port /dev/ttyUSB0 erase_fla
+    $ esptool.py --port /dev/ttyUSB0 --baud 460800 write_flash --flash_size=detect 0 Downloads/esp8266-20180511-v1.9.4.bin
+
+#### Setup wireless
+    $ import webrepl_setup
+    $ import network
+    $ sta_if = network.WLAN(network.STA_IF)
+    $ sta_if.active(True)
+       #6 ets_task(4020f474, 28, 3fff93a8, 10)
+    $ sta_if.connect('Incubator', 'Fl4mongo')
+    $ sta_if.isconnected()
+       True
+    $ sta_if.ifconfig()
+      ('192.168.178.124', '255.255.255.0', '192.168.178.1', '192.168.178.1')
+
+#### Connect via WEBrepl
+
+## Existing chips
+
 ### Ambiente
 The Ambience project is there to illuminate simple LED strips in the Dachboden.
 At the moment there is only one mode installed to illuminate the whole strip in any colour.
@@ -72,8 +95,13 @@ In addition to the live transmission, the goal shot is detected.
 
 - 192.168.178.170: ESP-239C3D ambiente
 - 192.168.178.73: ESP-0213EF sternenhimmel
-- 192.168.178.151: ESP-239663 bigeye
+- 192.168.178.151: ESP-239663 bigeye NOT!!!!
 - ...: ESP_E1A34B stageback
+
+### flashed but empty
+
+- 192.168.178.151 free
+- 192.168.178.124 free
 
 
 REPL Password: incubator
