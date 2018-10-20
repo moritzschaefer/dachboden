@@ -13,21 +13,6 @@ All files are located in the root folder. If the microcontroller outputs strange
 
 If you are using Mac OS High Sierra, the [driver](https://github.com/esp8266/Arduino/issues/732 "driver") must be installed.
 
-
-### WebREPL
-
-Run
-
-    git submodule init && git submodule update
-
-to initialize the webrepl directory access. Use
-
-    python -m http.server
-
-in the webrepl dir to access webrepl
-
-REPL Password: incubator
-
 ### Set up device
 If there are tools or files missing, look at the well documentation https://docs.micropython.org/en/latest/esp8266/esp8266/tutorial/network_basics.html
 
@@ -47,7 +32,19 @@ If there are tools or files missing, look at the well documentation https://docs
     $ sta_if.ifconfig()
       ('192.168.178.124', '255.255.255.0', '192.168.178.1', '192.168.178.1')
 
-#### Connect via WEBrepl
+### WebREPL
+
+Run
+
+    git submodule init && git submodule update
+
+to initialize the webrepl directory access. Use
+
+    python -m http.server
+
+in the webrepl dir to access webrepl
+
+REPL Password: incubator
 
 ## Existing chips
 
