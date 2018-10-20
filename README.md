@@ -88,6 +88,10 @@ The corresponding program is written with Python and runs on a Raspberry PI or o
 The laptop is more advantageous, because the calculation is carried out fast enough there.
 In addition to the live transmission, the goal shot is detected.
 
+### ToiletDisko
+Raspberry for controlling neopixels and audio on the disco toilet.
+[A good guide](https://learn.adafruit.com/pages/4281/elements/1136112/download) to control the neopixels via the Raspberry Pi. 
+
 ## IPs
 
 - 192.168.178.170: ESP-239C3D ambiente
