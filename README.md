@@ -90,7 +90,7 @@ In addition to the live transmission, the goal shot is detected.
 
 ### ToiletDisko
 Raspberry for controlling neopixels and audio on the disco toilet.
-[A good guide](https://learn.adafruit.com/pages/4281/elements/1136112/download) to control the neopixels via the Raspberry Pi. 
+[A good guide](https://learn.adafruit.com/neopixels-on-raspberry-pi/software) to control the neopixels via the Raspberry Pi. 
 
 ## IPs
 
