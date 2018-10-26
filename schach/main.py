@@ -14,13 +14,11 @@ import array
 # ...
 
 DATA_PIN = 2
-PIXELS = 95
-
-
+PIXELS = 97
 
 
 class Chess():
-    start_value=[(255,0,0),(0,255,0)]
+    start_value=[(200,0,0),(0,200,0)]
 
     def __init__(self):
         self.pixel_per_player = int(PIXELS/2)
@@ -56,16 +54,20 @@ class Chess():
         self.time = utime.ticks_ms()
         self.player = (self.player + 1) % 2
 
+    def time_out(self, player):
+        pass
+
+
 class Sender():
     def __init__(self):
         self.neop = neopixel.NeoPixel(machine.Pin(DATA_PIN), PIXELS)
 
     def send(self, pixel_values):
         for i in range(PIXELS):
-            self.neop[i] = pixel_values(t)
+            self.neop[i] = pixel_values(i)
         self.neop.write()
 
-class Reciever():
+class Receiver():
     def __enter__(self):
         return self
 
@@ -82,7 +84,7 @@ class Reciever():
         self.sock.bind(server_address)
         self.sock.settimeout(0.1)
 
-    def recieve(self):
+    def receive(self):
         try:
             data, _ = self.sock.recvfrom(self.buffer_size)
 
@@ -98,9 +100,9 @@ class Reciever():
 def main():
     chess = Chess()
     sender = Sender()
-    with Reciever() as recv:
+    with Receiver() as recv:
         while True:
-            data = recv.recieve()
+            data = recv.receive()
             if data is not None:
                 chess.process_input_data(data)
 
