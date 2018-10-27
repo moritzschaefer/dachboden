@@ -18,19 +18,23 @@ PIXELS = 97
 
 
 class Chess():
-    start_value=[(200,0,0),(0,200,0)]
+    start_value=[(150,0,0),(0,150,0)]
 
     def __init__(self):
-        self.pixel_per_player = int(PIXELS/2)
+        pixel_w = int(PIXELS/2)
+        self.pixel_per_player = (pixel_w, PIXELS-pixel_w)
         self.player = 0
         self.turn_time = 15*1000
         self.time = utime.ticks_ms()
         self.player_pixel = []
-        self.player_pixel.append([self.start_value[0] for i in range(int(PIXELS/2))])
-        self.player_pixel.append([self.start_value[1] for i in range(int(PIXELS / 2)+1)])
+        self.player_pixel.append([self.start_value[0] for i in range(self.pixel_per_player[0])])
+        self.player_pixel.append([self.start_value[1] for i in range(self.pixel_per_player[1])])
+        print(len(self.player_pixel))
+        print(len(self.player_pixel[0]), len(self.player_pixel[1]))
         self.board = self.player_pixel[0] + self.player_pixel[1]
         #self.board = [(0,0,0) for i in range(PIXELS)]
         self.light=0
+        self.sender = Sender()
     def get_lights(self):
         return self.board
 
@@ -42,10 +46,21 @@ class Chess():
         time_diff = utime.ticks_diff(utime.ticks_ms(),self.time)
         if time_diff > self.turn_time:
             self.player_restart()
-        elif time_diff > self.light * (self.turn_time/ (self.pixel_per_player+self.player)):
-            self.player_pixel[self.light] = (self.start_value[self.player]*0.3)
-            self.light += 1
-            self.board = self.player_pixel[0] + self.player_pixel[1]
+        elif time_diff > self.light * (self.turn_time/ (self.pixel_per_player[self.player])):
+
+            #print("Length of Pixel", len(self.player_pixel[0]), len(self.player_pixel[1]))
+            #self.player_pixel[self.player][self.light] = tuple(map(lambda a: int(a*0.1), self.start_value[self.player]))
+            self.board[self.light + self.player * self.pixel_per_player[0]] = tuple(
+                map(lambda a: int(a * 0.1), self.start_value[self.player]))
+
+            self.light = min(self.light+1, self.pixel_per_player[self.player]-1)
+            #print(self.light, "licht")
+            self.board[self.light + self.player * self.pixel_per_player[0]] = ( self.start_value[self.player][0],
+                                                                                self.start_value[self.player][1], 150)
+            #self.board = self.player_pixel[0] + self.player_pixel[1]
+            board_copy = self.board.copy()
+
+            self.sender.send(self.board)
 
     def player_restart(self):
         self.player_pixel[self.player] = [ self.start_value[self.player] for i in self.player_pixel[self.player]]
@@ -53,6 +68,7 @@ class Chess():
         self.light = 0
         self.time = utime.ticks_ms()
         self.player = (self.player + 1) % 2
+        self.sender.send(self.board)
 
     def time_out(self, player):
         pass
@@ -64,7 +80,7 @@ class Sender():
 
     def send(self, pixel_values):
         for i in range(PIXELS):
-            self.neop[i] = pixel_values(i)
+            self.neop[i] = pixel_values[i]
         self.neop.write()
 
 class Receiver():
@@ -99,7 +115,6 @@ class Receiver():
 
 def main():
     chess = Chess()
-    sender = Sender()
     with Receiver() as recv:
         while True:
             data = recv.receive()
@@ -107,8 +122,6 @@ def main():
                 chess.process_input_data(data)
 
             chess.step()
-            pixel_values = chess.get_lights()
-            sender.send(pixel_values)
 
 
 
