@@ -5,8 +5,9 @@ import utime
 import socket
 
 
-DATA_PIN = 2
-PIXELS = 100
+DATA_PIN = 0
+DATA_PIN_2 = 2
+PIXELS = 72
 BUTTON_PIN = 4
 
 class ArcadeKicker():
@@ -14,18 +15,18 @@ class ArcadeKicker():
     pong_color = (0,200,0)
     def __init__(self):
 
-        self.sender = Sender()
+        self.sender = Sender(DATA_PIN, DATA_PIN_2)
         self.start_sequence()
         #self.stripes = [self.start_value for i in range(PIXELS)]
         self.time = utime.ticks_ms()
-        self.pong_pos = 0
+        self.pong_pos = 1
         self.stripes[self.pong_pos] = self.pong_color
         self.pong_step_time = 0.5*1000
         self.pong_inc = 1
         self.button_pressed = False
         # Not sure if Inputpin can be a class variable
-        self.button_pin = machine.Pin(BUTTON_PIN,machine.Pin.IN)
-        self.button_pin.irq(trigger=machine.Pin.IRQ_RISING | machine.Pin.IRQ_FALLING, handler=self.button_callback)
+        #self.button_pin = machine.Pin(BUTTON_PIN,machine.Pin.IN)
+        #self.button_pin.irq(trigger=machine.Pin.IRQ_RISING | machine.Pin.IRQ_FALLING, handler=self.button_callback)
 
     def get_lights(self):
         return self.stripes
@@ -40,40 +41,49 @@ class ArcadeKicker():
             self.strobo()
             self.button_pressed = False
         elif time_diff > self.pong_step_time:
-            if(self.pong_pos+1 >= PIXELS):
+            if(self.pong_pos+3 >= PIXELS):
                 self.pong_inc = -1
-            elif(self.pong_pos <=0 ):
+                self.strobo()
+            elif(self.pong_pos <= 0 ):
                 self.pong_inc = 1
-
-            self.stripes[self.pong_pos] = self.start_value
+                self.strobo()
+            if(self.pong_inc > 0):
+                self.stripes[self.pong_pos ] = self.start_value
+            else:
+                self.stripes[self.pong_pos +2] = self.start_value
             self.pong_pos += self.pong_inc
             self.stripes[self.pong_pos] = self.pong_color
+            self.stripes[self.pong_pos + 1] = self.pong_color
+            self.stripes[self.pong_pos + 2] = self.pong_color
 
             self.sender.send(self.stripes)
 
             self.time = utime.ticks_ms
 
-    def strobo(self):
+    def strobo(self, n_strobes=10):
         strobo_board_dark = [(0,0,0) for i in range(PIXELS)]
-        strobo_board_bright = [(200,200,200) for i in range(PIXELS)]
-        for i in range(10):
+        strobo_board_bright = [(100,100,100) for i in range(PIXELS)]
+        for i in range(n_strobes):
             self.sender.send(strobo_board_dark)
-            utime.sleep_ms(5)
+            utime.sleep_ms(1)
             self.sender.send(strobo_board_bright)
-            utime.sleep_ms(5)
+            utime.sleep_ms(1)
         self.sender.send(self.stripes)
     def start_sequence(self):
         self.stripes = [(0,0,0) for i in range(PIXELS)]
-        for i in range(PIXELS):
+        for i in range(int(PIXELS/2)+2):
             self.stripes[i] = (200,0,0)
+            self.stripes[-i] = (200, 0, 0)
             self.sender.send(self.stripes)
             utime.sleep_ms(20)
-        for i in range(PIXELS):
+        for i in range(int(PIXELS/2)+2):
             self.stripes[i] = ( 0, 0, 200)
+            self.stripes[-i] = (0, 0, 200)
             self.sender.send(self.stripes)
             utime.sleep_ms(20)
-        for i in range(PIXELS):
+        for i in range(int(PIXELS/2)+2):
             self.stripes[i] = self.start_value
+            self.stripes[-i] = self.start_value
             self.sender.send(self.stripes)
             utime.sleep_ms(10)
 
@@ -85,13 +95,18 @@ class ArcadeKicker():
 
 
 class Sender():
-    def __init__(self):
-        self.neop = neopixel.NeoPixel(machine.Pin(DATA_PIN), PIXELS)
+    def __init__(self, pin, pin2 = None):
+
+        self.neop = neopixel.NeoPixel(machine.Pin(pin), PIXELS)
+        if pin2 is not None:
+            self.neop2 = neopixel.NeoPixel(machine.Pin(pin2), PIXELS)
 
     def send(self, pixel_values):
         for i in range(PIXELS):
             self.neop[i] = pixel_values[i]
+            self.neop2[i] = pixel_values[i]
         self.neop.write()
+        self.neop2.write()
 
 class Receiver():
     def __enter__(self):
@@ -125,6 +140,7 @@ class Receiver():
 
 def main():
     arckick = ArcadeKicker()
+
     with Receiver() as recv:
         while True:
             data = recv.receive()
