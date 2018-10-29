@@ -7,7 +7,7 @@ import socket
 
 DATA_PIN = 2
 PIXELS = 100
-
+BUTTON_PIN = 4
 
 class ArcadeKicker():
     start_value= (200,200,200)
@@ -22,6 +22,10 @@ class ArcadeKicker():
         self.stripes[self.pong_pos] = self.pong_color
         self.pong_step_time = 0.5*1000
         self.pong_inc = 1
+        self.button_pressed = False
+        # Not sure if Inputpin can be a class variable
+        self.button_pin = machine.Pin(BUTTON_PIN,machine.Pin.IN)
+        self.button_pin.irq(trigger=machine.Pin.IRQ_RISING | machine.Pin.IRQ_FALLING, handler=self.button_callback)
 
     def get_lights(self):
         return self.stripes
@@ -32,7 +36,10 @@ class ArcadeKicker():
 
     def step(self):
         time_diff = utime.ticks_diff(utime.ticks_ms(), self.time)
-        if time_diff > self.pong_step_time:
+        if self.button_pressed:
+            self.strobo()
+            self.button_pressed = False
+        elif time_diff > self.pong_step_time:
             if(self.pong_pos+1 >= PIXELS):
                 self.pong_inc = -1
             elif(self.pong_pos <=0 ):
@@ -46,6 +53,15 @@ class ArcadeKicker():
 
             self.time = utime.ticks_ms
 
+    def strobo(self):
+        strobo_board_dark = [(0,0,0) for i in range(PIXELS)]
+        strobo_board_bright = [(200,200,200) for i in range(PIXELS)]
+        for i in range(10):
+            self.sender.send(strobo_board_dark)
+            utime.sleep_ms(5)
+            self.sender.send(strobo_board_bright)
+            utime.sleep_ms(5)
+        self.sender.send(self.stripes)
     def start_sequence(self):
         self.stripes = [(0,0,0) for i in range(PIXELS)]
         for i in range(PIXELS):
@@ -63,6 +79,9 @@ class ArcadeKicker():
 
     def time_out(self, player):
         pass
+
+    def button_callback(self, pin):
+        self.button_pressed = True
 
 
 class Sender():
