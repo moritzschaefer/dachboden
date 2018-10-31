@@ -18,9 +18,11 @@ If there are tools or files missing, look at the well documentation https://docs
 
 #### Flashing device
 Entferne Speicher im Flash.
+
     $ esptool.py --port /dev/ttyUSB0 erase_flash
     
 Lade Firmware von [MicroPython downloads page](http://micropython.org/download#esp8266) herunter und schreibe Firmware
+
     $ esptool.py --port /dev/ttyUSB0 --baud 460800 write_flash --flash_size=detect 0 Downloads/esp8266-20180511-v1.9.4.bin
 
 #### Setup wireless
