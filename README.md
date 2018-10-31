@@ -17,16 +17,26 @@ If you are using Mac OS High Sierra, the [driver](https://github.com/esp8266/Ard
 If there are tools or files missing, look at the well documentation https://docs.micropython.org/en/latest/esp8266/esp8266/tutorial/network_basics.html
 
 #### Flashing device
-Entferne Speicher im Flash.
+Remove memory in Flash.
 
     $ esptool.py --port /dev/ttyUSB0 erase_flash
     
-Lade Firmware von [MicroPython downloads page](http://micropython.org/download#esp8266) herunter und schreibe Firmware
+Download firmware from [MicroPython downloads page](http://micropython.org/download#esp8266) and write firmware.
 
     $ esptool.py --port /dev/ttyUSB0 --baud 460800 write_flash --flash_size=detect 0 Downloads/esp8266-20180511-v1.9.4.bin
 
+#### REPL over the serial port
+Connect via a serial port to the microcontroller, under Linux e.g.
+
+    $ picocom /dev/ttyUSB0 -b115200
+    
 #### Setup wireless
+Open webrepl setup and set password for the microcontroller.
+
     $ import webrepl_setup
+    
+At this point, an input must happen.
+    
     $ import network
     $ sta_if = network.WLAN(network.STA_IF)
     $ sta_if.active(True)
