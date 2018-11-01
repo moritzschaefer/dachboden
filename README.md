@@ -20,7 +20,7 @@ If there are tools or files missing, look at the well documentation https://docs
 Remove memory in Flash.
 
     $ esptool.py --port /dev/ttyUSB0 erase_flash
-    
+
 Download firmware from [MicroPython downloads page](http://micropython.org/download#esp8266) and write firmware.
 
     $ esptool.py --port /dev/ttyUSB0 --baud 460800 write_flash --flash_size=detect 0 Downloads/esp8266-20180511-v1.9.4.bin
@@ -29,14 +29,14 @@ Download firmware from [MicroPython downloads page](http://micropython.org/downl
 Connect via a serial port to the microcontroller, under Linux e.g.
 
     $ picocom /dev/ttyUSB0 -b115200
-    
+
 #### Setup wireless
 Open webrepl setup and set password for the microcontroller.
 
     $ import webrepl_setup
-    
+
 At this point, an input must happen.
-    
+
     $ import network
     $ sta_if = network.WLAN(network.STA_IF)
     $ sta_if.active(True)
@@ -81,7 +81,7 @@ There are three modes in the code:
 ### BarGame
 The BarGame project is a reaction game at the bar.
 In the game there are two screens on which different symbols are displayed.
-At the beginning of the game a target symbol is displayed. 
+At the beginning of the game a target symbol is displayed.
 If the symbol is displayed on the screen again, the player who presses the screen first wins.
 
 ## Raspberry Pi
@@ -91,10 +91,10 @@ By a fast shaking of the head an image is generated.
 The image can be changed by logging in to the WLAN of the shaking stick (Jote..) and then going to any page.
 You will then be automatically forwarded to the Raspberry PI page.
 
-To connect to Raspberry PI 
+To connect to Raspberry PI
 
    ssh pi@192.168.42.1
-   
+
 Password: raspberry or Raspberry
 
 ### Kickercam
@@ -105,13 +105,14 @@ In addition to the live transmission, the goal shot is detected.
 
 ### ToiletDisko
 Raspberry for controlling neopixels and audio on the disco toilet.
-[A good guide](https://learn.adafruit.com/neopixels-on-raspberry-pi/software) to control the neopixels via the Raspberry Pi. 
+[A good guide](https://learn.adafruit.com/neopixels-on-raspberry-pi/software) to control the neopixels via the Raspberry Pi.
 
 ## IPs
 
 - 192.168.178.170: ESP-239C3D ambiente
 - 192.168.178.73: ESP-0213EF sternenhimmel
 - 192.168.178.151: ESP-239663 bigeye NOT!!!!
+- 192.168.178.78: ESP-E1A3E4 lasercannon
 - ...: ESP_E1A34B stageback
 
 ### flashed but empty
