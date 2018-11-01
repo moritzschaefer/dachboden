@@ -7,7 +7,7 @@ import socket
 
 DATA_PIN = 0 #D3
 DATA_PIN_2 = 2 #D4
-PIXELS = 72
+PIXELS = 71 #72
 BUTTON_PIN = 4
 
 class ArcadeKicker():
