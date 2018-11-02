@@ -29,7 +29,7 @@ class DachbodenSchild():
         self.position = (self.position +1) % PIXELS
         for i in range(PIXELS):
             if(self.position == i or  i == (self.position + self.width) % PIXELS ):
-                self.stripe[i] = (self.color[0] * 0.5,self.color[1] * 0.5,self.color[2] * 0.5)
+                self.stripe[i] = (int(self.color[0] * 0.5),int(self.color[1] * 0.5),int(self.color[2] * 0.5))
             elif((self.position  % PIXELS) <= i <= self.position+ self.width):
                 self.stripe[i] = self.color
             elif(i <=(self.position+ self.width) % PIXELS and (self.position+ self.width) % PIXELS  <= self.position):
@@ -60,7 +60,6 @@ class DachbodenSchild():
             print("Move to right")
             self.move_right()
             self.time = utime.ticks_ms()
-        elif(abs(utime.ticks_diff(self.time, utime.ticks_ms())) > self.step_time):
 
 
         if (abs(utime.ticks_diff(self.ctime, utime.ticks_ms())) > self.color_time):

@@ -41,7 +41,6 @@ class ArcadeKicker():
     def step(self):
         time_diff = utime.ticks_diff(utime.ticks_ms(), self.time)
         if self.button_pressed:
-            self.strobo()
             self.button_pressed = False
         elif time_diff > self.pong_step_time:
             if(self.pong_pos+3 >= PIXELS):
@@ -162,15 +161,16 @@ class Receiver():
 
 def main():
     arckick = ArcadeKicker()
-
+    while True:
+        arckick.step()
+    """
     with Receiver() as recv:
         while True:
             data = recv.receive()
             if data is not None:
                 arckick.process_input_data(data)
-
             arckick.step()
-
+    """
 
 
 if __name__ == "__main__":
