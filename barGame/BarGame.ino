@@ -1,5 +1,3 @@
-
-
 /*
   Knock Sensor
 
