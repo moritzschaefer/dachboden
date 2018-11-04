@@ -118,6 +118,8 @@ Raspberry for controlling neopixels and audio on the disco toilet.
 - 192.168.178.73: ESP-0213EF sternenhimmel
 - 192.168.178.151: ESP-239663 bigeye NOT!!!!
 - 192.168.178.191: //TODO Moritz trag was ein
+- 192.168.178.185: schach
+- 192.168.178.54: barschild
 - ...: ESP_E1A34B stageback
 
 ### flashed but empty
