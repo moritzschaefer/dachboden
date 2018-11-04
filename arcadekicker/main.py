@@ -14,10 +14,9 @@ PIXELS = 71 #72
 BUTTON_PIN = 4
 
 class ArcadeKicker():
-    start_value= (200,200,200)
+    start_value= (255,255,255)
     pong_color = (0,200,0)
     def __init__(self):
-
         self.sender = Sender(DATA_PIN, DATA_PIN_2)
         self.start_sequence()
         #self.stripes = [self.start_value for i in range(PIXELS)]
@@ -68,6 +67,9 @@ class ArcadeKicker():
 
         a = random.randint(0,8)
         #a = 2
+        if a in (1, 2, 6, 8):
+            return
+
         if(a==0):
             lightshow.random_Sparkles(self.sender,n_sparks=random.randint(50,100), strobo_mode= False, sleep_time= 5, max_lights = 30)
         elif(a==1):
