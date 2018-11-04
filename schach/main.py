@@ -32,7 +32,6 @@ class Chess():
         print(len(self.player_pixel))
         print(len(self.player_pixel[0]), len(self.player_pixel[1]))
         self.board = self.player_pixel[0] + self.player_pixel[1]
-        #self.board = [(0,0,0) for i in range(PIXELS)]
         self.light=0
         self.sender = Sender()
     def get_lights(self):
@@ -57,7 +56,7 @@ class Chess():
             #print(self.light, "licht")
             self.board[self.light + self.player * self.pixel_per_player[0]] = ( self.start_value[self.player][0],
                                                                                 self.start_value[self.player][1], 150)
-            #self.board = self.player_pixel[0] + self.player_pixel[1]
+
             board_copy = self.board.copy()
 
             self.sender.send(self.board)
