@@ -6,6 +6,7 @@ INTENSITY = 80
 
 RED = (INTENSITY, 0, 0)
 GREEN = (3, 50, 0)
+YELLOW = (30, 30, 0)
 
 np = neopixel.NeoPixel(machine.Pin(PIN), NUM_PIXEL)
 
@@ -38,6 +39,15 @@ drinks = ['dachschaden',
           'mexikaner',
           'kolja']
 
+cocktails = ['wodka mate',
+          'cosmopolitan',
+          'moscow mule',
+          'tequila sunrise',
+          'mojito',
+          'gin tonic',
+          'sex on the beach',
+          'cuba libre']
+
 drink_to_idx = dict(zip(drinks, range(len(drinks))))
 
 def leer(drink):
@@ -45,6 +55,9 @@ def leer(drink):
 
 def wieder_da(drink):
     set_pixel(drink_to_idx[drink], GREEN)
+
+def cocktails_leer():
+    leer('cocktails')
 
 def alles_da():
     uniform_color((0,0,0))
@@ -57,14 +70,16 @@ def alles_leer():
         set_pixel(drink, RED)
 
 def main():
-    alles_da()        
+    alles_da()
+    leer('')
 
 def info():
     print('functions:\n')
-    print('leer(drink)')
-    print('wieder_da(drink)')
+    print("leer('Bier')")
+    print("wieder_da('Bier')")
     print('alles_da()')
     print('alles_leer()\n')
+    print('Die drinks die angeboten werden: \n')
     for drink in drinks:
         print(drink)
 
