@@ -5,7 +5,7 @@ import socket
 import lightshow
 import random
 import uos
-
+import sys
 #TODO random
 
 DATA_PIN = 0 #D3
@@ -39,29 +39,36 @@ class ArcadeKicker():
 
     def step(self):
         time_diff = utime.ticks_diff(utime.ticks_ms(), self.time)
-        if self.button_pressed:
-            self.button_pressed = False
-        elif time_diff > self.pong_step_time:
-            if(self.pong_pos+3 >= PIXELS):
-                self.pong_inc = -1
-                #self.strobo()
-                self.select_random_special()
-            elif(self.pong_pos <= 0 ):
-                self.pong_inc = 1
-                #self.strobo()
-                self.select_random_special()
-            if(self.pong_inc > 0):
-                self.stripes[self.pong_pos ] = self.start_value
-            else:
-                self.stripes[self.pong_pos +2] = self.start_value
-            self.pong_pos += self.pong_inc
-            self.stripes[self.pong_pos] = self.pong_color
-            self.stripes[self.pong_pos + 1] = self.pong_color
-            self.stripes[self.pong_pos + 2] = self.pong_color
+        try:
+            if self.button_pressed:
+                #Here the codes crashes and game become normal, its not a bug its a feature, just touch pin 4
+                self.button_pressed = False
+            elif time_diff > self.pong_step_time:
+                if(self.pong_pos+3 >= PIXELS):
+                    self.pong_inc = -1
+                    #self.strobo()
+                    self.select_random_special()
+                elif(self.pong_pos <= 0 ):
+                    self.pong_inc = 1
+                    #self.strobo()
+                    self.select_random_special()
+                if(self.pong_inc > 0):
+                    self.stripes[self.pong_pos ] = self.start_value
+                else:
+                    self.stripes[self.pong_pos +2] = self.start_value
+                self.pong_pos += self.pong_inc
+                self.stripes[self.pong_pos] = self.pong_color
+                self.stripes[self.pong_pos + 1] = self.pong_color
+                self.stripes[self.pong_pos + 2] = self.pong_color
 
-            self.sender.send(self.stripes)
+                self.sender.send(self.stripes)
 
-            self.time = utime.ticks_ms
+                self.time = utime.ticks_ms
+
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            print(exc_type, exc_tb.tb_lineno)
+
 
     def select_random_special(self):
 
@@ -109,6 +116,7 @@ class ArcadeKicker():
             self.stripes[-i] = self.start_value
             self.sender.send(self.stripes)
             utime.sleep_ms(10)
+
 
     def time_out(self, player):
         pass
@@ -162,9 +170,10 @@ class Receiver():
 
 
 def main():
-    arckick = ArcadeKicker()
+    arcadekicker = ArcadeKicker()
     while True:
-        arckick.step()
+        arcadekicker.step()
+
     """
     with Receiver() as recv:
         while True:

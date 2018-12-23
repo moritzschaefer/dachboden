@@ -53,7 +53,7 @@ def ongoing_lights(sender):
 
 def moving_areas(sender, n_moves = 5, area_width=None, n_areas = None, area_color = "white"):
     if(area_width is None):
-        area_width = random.randint(8,20)
+        area_width = random.randint(15,25)
     if(n_areas is None):
         n_areas = random.randint(1,5)
     if(area_color=="white"):

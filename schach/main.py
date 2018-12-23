@@ -15,16 +15,17 @@ import array
 
 DATA_PIN = 2
 PIXELS = 97
+MAX_ROTATIONS = 20
 
 
-class Chess():
+class Chess:
     start_value=[(150,0,0),(0,150,0)]
 
     def __init__(self):
         pixel_w = int(PIXELS/2)
         self.pixel_per_player = (pixel_w, PIXELS-pixel_w)
         self.player = 0
-        self.turn_time = 15*1000
+        self.turn_time = 15*100
         self.time = utime.ticks_ms()
         self.player_pixel = []
         self.player_pixel.append([self.start_value[0] for i in range(self.pixel_per_player[0])])
@@ -34,6 +35,11 @@ class Chess():
         self.board = self.player_pixel[0] + self.player_pixel[1]
         self.light=0
         self.sender = Sender()
+
+        self.Counter = 0
+
+
+
     def get_lights(self):
         return self.board
 
@@ -61,6 +67,7 @@ class Chess():
 
             self.sender.send(self.board)
 
+
     def player_restart(self):
         self.player_pixel[self.player] = [ self.start_value[self.player] for i in self.player_pixel[self.player]]
         self.board = self.player_pixel[0] + self.player_pixel[1]
@@ -68,6 +75,11 @@ class Chess():
         self.time = utime.ticks_ms()
         self.player = (self.player + 1) % 2
         self.sender.send(self.board)
+
+        self.Counter += 1
+        if(self.Counter >= MAX_ROTATIONS):
+            self.ambiente()
+
 
     def time_out(self, player):
         pass
@@ -111,15 +123,18 @@ class Receiver():
         else:
             return data
 
+def ambiente_light(self):
+    pass
 
 def main():
     chess = Chess()
     with Receiver() as recv:
         while True:
+            """
             data = recv.receive()
             if data is not None:
                 chess.process_input_data(data)
-
+            """
             chess.step()
 
 
