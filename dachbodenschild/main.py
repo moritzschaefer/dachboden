@@ -4,14 +4,14 @@ import utime
 import uos
 import socket
 import array
-
+import eyes
 DATA_PIN = 4
 PIXELS = 54
 
 
 class DachbodenSchild():
     start_value=(150,0,0)
-    step_time = 50
+    step_time = 25
     color_time = 1
     width = 27
     def __init__(self):
@@ -25,6 +25,8 @@ class DachbodenSchild():
         self.position = 0
         self.ctime = utime.ticks_ms()
         self.color_mode = 0 # 0: Blue rising, 1: Red sinking, 2: Red rising, 3: Blue sinking
+        self.eyes = eyes.Eyes()
+
     def move_right(self):
         self.position = (self.position +1) % PIXELS
         for i in range(PIXELS):
@@ -55,18 +57,22 @@ class DachbodenSchild():
         elif (self.color_mode == 3):
             self.color = (self.color[0], self.color[1], self.color[2]-1)
 
+
     def step(self):
         if(abs(utime.ticks_diff(self.time, utime.ticks_ms())) > self.step_time):
-            print("Move to right")
+            #print("Move to right")
             self.move_right()
             self.time = utime.ticks_ms()
 
 
         if (abs(utime.ticks_diff(self.ctime, utime.ticks_ms())) > self.color_time):
-            print("Change color ", self.color)
+            #print("Change color ", self.color)
             self.change_color()
             self.color_time = utime.ticks_ms()
         self.sender.send(self.stripe)
+        inverted_color = (int(0.7*self.color[2]),self.color[1], int(0.7*self.color[0]))
+        self.eyes.circling_eyes(inverted_color)
+
 
     def get_lights(self):
         return self.stripe
@@ -81,11 +87,11 @@ class DachbodenSchild():
 
 
 class Sender():
-    def __init__(self):
-        self.neop = neopixel.NeoPixel(machine.Pin(DATA_PIN), PIXELS)
-
+    def __init__(self, pin = DATA_PIN, pixels = PIXELS):
+        self.neop = neopixel.NeoPixel(machine.Pin(pin), pixels)
+        self.pixels = pixels
     def send(self, pixel_values):
-        for i in range(PIXELS):
+        for i in range(self.pixels):
             self.neop[i] = pixel_values[i]
         self.neop.write()
 
