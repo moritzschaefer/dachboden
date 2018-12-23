@@ -6,6 +6,8 @@ import uos
 import socket
 import array
 import Ambiente
+import stroboscope
+import startup
 # Channels: 151
 
 # 0 mode
@@ -38,6 +40,10 @@ class Chess:
 
         self.sender.send(self.board)
         utime.sleep_ms(15000)
+
+        stroboscope.stroboscope(self.sender, self.board)
+
+        startup.startup(self.sender, self.player_pixel)
 
         self.Counter = 0
         self.ambiente = Ambiente.Ambiente(self.sender)
@@ -147,6 +153,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
