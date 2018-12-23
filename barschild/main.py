@@ -19,6 +19,10 @@ def uniform_color(color):
         np[i] = color
     np.write()
 
+def show_billboard():
+    #TODO np durchgehen, vergleichen welche Elemente welcher Farbe entsprechen, output auf Farbe setzen
+    print('TODO')
+
 drinks = ['dachschaden',
           'fruechtchen',
           'wodka mate',
@@ -59,6 +63,9 @@ def wieder_da(drink):
 def cocktails_leer():
     leer('cocktails')
 
+def cocktails_wieder_da():
+    wieder_da('cocktails')
+
 def alles_da():
     uniform_color((0,0,0))
     for drink in drink_to_idx.values():
@@ -71,14 +78,17 @@ def alles_leer():
 
 def main():
     alles_da()
-    leer('')
+    leer('mexikaner')
+    leer('j koffeinfrei')
 
 def info():
     print('functions:\n')
-    print("leer('Bier')")
-    print("wieder_da('Bier')")
-    print('alles_da()')
+    print("leer('Bier')\n")
+    print("voll('Bier')\n")
     print('alles_leer()\n')
+    print('alles_voll()\n')
+    print('cocktails_leer()\n')
+    print('cocktails_voll()\n')
     print('Die drinks die angeboten werden: \n')
     for drink in drinks:
         print(drink)
