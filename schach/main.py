@@ -5,7 +5,7 @@ import utime
 import uos
 import socket
 import array
-
+import Ambiente
 # Channels: 151
 
 # 0 mode
@@ -25,7 +25,7 @@ class Chess:
         pixel_w = int(PIXELS/2)
         self.pixel_per_player = (pixel_w, PIXELS-pixel_w)
         self.player = 0
-        self.turn_time = 15*100
+        self.turn_time = 15*1000
         self.time = utime.ticks_ms()
         self.player_pixel = []
         self.player_pixel.append([self.start_value[0] for i in range(self.pixel_per_player[0])])
@@ -36,9 +36,13 @@ class Chess:
         self.light=0
         self.sender = Sender()
 
+        self.sender.send(self.board)
+        utime.sleep_ms(15000)
+
         self.Counter = 0
-
-
+        self.ambiente = Ambiente.Ambiente(self.sender)
+        while True:
+            self.ambiente.ambiente_step()
 
     def get_lights(self):
         return self.board
@@ -49,6 +53,10 @@ class Chess:
 
     def step(self):
         time_diff = utime.ticks_diff(utime.ticks_ms(),self.time)
+
+        if(self.Counter >= MAX_ROTATIONS):
+            self.ambiente.ambiente_step()
+            return
         if time_diff > self.turn_time:
             self.player_restart()
         elif time_diff > self.light * (self.turn_time/ (self.pixel_per_player[self.player])):
@@ -77,8 +85,6 @@ class Chess:
         self.sender.send(self.board)
 
         self.Counter += 1
-        if(self.Counter >= MAX_ROTATIONS):
-            self.ambiente()
 
 
     def time_out(self, player):
