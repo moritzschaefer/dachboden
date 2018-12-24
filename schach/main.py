@@ -39,11 +39,11 @@ class Chess:
         self.sender = Sender()
 
         self.sender.send(self.board)
-        utime.sleep_ms(15000)
+        #utime.sleep_ms(15000)
 
-        stroboscope.stroboscope(self.sender, self.board)
-
-        startup.startup(self.sender, self.player_pixel)
+        #stroboscope.stroboscope(self.sender, self.board)
+        startup.startup(self.sender, self.player_pixel, self.start_value)
+        print("One Startup finished")
 
         self.Counter = 0
         self.ambiente = Ambiente.Ambiente(self.sender)
