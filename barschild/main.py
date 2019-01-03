@@ -2,11 +2,11 @@ import machine, neopixel, time
 
 PIN = 2
 NUM_PIXEL = 19
-INTENSITY = 80
+INTENSITY = 40
 
-RED = (INTENSITY, 0, 0)
-GREEN = (3, 50, 0)
-YELLOW = (30, 30, 0)
+RED = (16, 0, 0)
+GREEN = (1, 8, 0)
+YELLOW = (15, 15, 0)
 
 np = neopixel.NeoPixel(machine.Pin(PIN), NUM_PIXEL)
 

@@ -115,16 +115,16 @@ Raspberry for controlling neopixels and audio on the disco toilet.
 ## IPs
 
 - 192.168.178.170: ESP-239C3D ambiente
-- 192.168.178.73: ESP-0213EF sternenhimmel
+- 192.168.178.73:  ESP-0213EF sternenhimmel
 - 192.168.178.151: ESP-239663 bigeye NOT!!!!
 - 192.168.178.191: ArcadeKicker
 - 192.168.178.177: DachbodenSchild
-- ...: ESP_E1A34B stageback
+- ...............: ESP_E1A34B stageback
 - 192.168.178.191: //TODO Moritz trag was ein
 - 192.168.178.185: schach
-- 192.168.178.54: barschild
-- 192.168.178.78: ESP-E1A3E4 lasercannon
-- 192.168.178.79: ESP-E1A287 dystocity
+- 192.168.178.80:  barschild
+- 192.168.178.78:  ESP-E1A3E4 lasercannon
+- 192.168.178.79:  ESP-E1A287 dystocity
 - 192.168.178.191: ESP-E1A166 arcadekicker
 
 183, need to be added here!
