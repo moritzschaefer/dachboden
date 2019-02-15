@@ -4,6 +4,7 @@ import utime
 import socket
 import lightshow
 import random
+import gc
 import uos
 import sys
 #TODO random
@@ -50,10 +51,10 @@ class ArcadeKicker():
             return
         time_diff = utime.ticks_diff(utime.ticks_ms(), self.time)
         try:
-            if self.button_pressed:
-                #Here the codes crashes and game become normal, its not a bug its a feature, just touch pin 4
-                self.button_pressed = False
-            elif time_diff > self.pong_step_time:
+            #if self.button_pressed:
+            #Here the codes crashes and game become normal, its not a bug its a feature, just touch pin 4
+            #    self.button_pressed = False
+            if time_diff > self.pong_step_time:
                 if(self.pong_pos+3 >= PIXELS):
                     self.pong_inc = -1
                     #self.strobo()
@@ -81,7 +82,7 @@ class ArcadeKicker():
             print("Intern Error in step function", e)
 
     def select_random_special(self):
-        if(random.randint(0,100) < 75):
+        if(random.randint(0,100) < 66):
             return
         a = random.randint(0,9)
         #a = 2
@@ -109,7 +110,7 @@ class ArcadeKicker():
 
         self.stripes = [self.start_value for i in range(PIXELS)]
 
-
+        gc.collect()
 
     def start_sequence(self):
         self.stripes = [(0,0,0) for i in range(PIXELS)]
