@@ -14,16 +14,24 @@ PIXELS = 71 #72
 BUTTON_PIN = 4
 
 class ArcadeKicker():
-    start_value= (255,255,255)
+    start_value= (200,200,200)
     pong_color = (0,200,0)
+
     def __init__(self):
         self.sender = Sender(DATA_PIN, DATA_PIN_2)
-        self.start_sequence()
+        if(random.randint(0,1000) % 2):
+            self.normal_mode = True
+            self.stripes = [(200, 200, 200) for i in range(PIXELS)]
+            self.sender.send(self.stripes)
+        else:
+            self.normal_mode = False
+            self.start_sequence()
         #self.stripes = [self.start_value for i in range(PIXELS)]
         self.time = utime.ticks_ms()
         self.pong_pos = 1
         self.stripes[self.pong_pos] = self.pong_color
-        self.pong_step_time = 0.5*1000
+        #self.pong_step_time = 0.5*1000
+        self.pong_step_time = 0.5 * 10
         self.pong_inc = 1
         self.button_pressed = False
         # Not sure if Inputpin can be a class variable
@@ -38,6 +46,8 @@ class ArcadeKicker():
         print(data)
 
     def step(self):
+        if self.normal_mode:
+            return
         time_diff = utime.ticks_diff(utime.ticks_ms(), self.time)
         try:
             if self.button_pressed:
@@ -66,36 +76,38 @@ class ArcadeKicker():
                 self.time = utime.ticks_ms
 
         except Exception as e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            print(exc_type, exc_tb.tb_lineno)
-
+            #exc_type, exc_obj, exc_tb = sys.exc_info()
+            #print(exc_type, exc_tb.tb_lineno)
+            print("Intern Error in step function", e)
 
     def select_random_special(self):
-
-        a = random.randint(0,8)
-        #a = 2
-        if a in (1, 2, 6, 8):
+        if(random.randint(0,100) < 75):
             return
-
+        a = random.randint(0,9)
+        #a = 2
+        if a in (1,2):
+            return
+            #a= 2
         if(a==0):
-            lightshow.random_Sparkles(self.sender,n_sparks=random.randint(50,100), strobo_mode= False, sleep_time= 5, max_lights = 30)
+            lightshow.random_Sparkles(self.sender,self.stripes, n_sparks=random.randint(50,100), strobo_mode= False, sleep_time= 5, max_lights = 40)
         elif(a==1):
-            lightshow.strobo(self.sender, random.randint(20,40))
+            lightshow.strobo(self.sender, self.stripes, random.randint(20,40))
         elif(a==2):
-            lightshow.moving_areas(self.sender)
+            lightshow.moving_areas(self.sender, self.stripes)
         elif(a==3):
-            lightshow.random_Sparkles(self.sender,n_sparks=random.randint(20,100), color="random")
+            lightshow.random_Sparkles(self.sender, self.stripes, n_sparks=random.randint(40,100), color="random")
         elif(a==4):
-            lightshow.ongoing_lights(self.sender)
+            lightshow.ongoing_lights(self.sender, self.stripes )
         elif(a == 5):
-            lightshow.moving_areas(self.sender,n_moves= random.randint(3,10),n_areas=3, area_color="distinct")
+            lightshow.moving_areas(self.sender, self.stripes, n_moves= random.randint(5,20),n_areas=3, area_color="distinct")
         elif(a == 6):
-            lightshow.moving_areas(self.sender,n_moves= random.randint(3,7), area_color="diverse")
+            lightshow.moving_areas(self.sender,self.stripes, n_moves= random.randint(5,20), area_color="diverse")
         elif(a == 7):
-            lightshow.random_Sparkles(self.sender, n_sparks=random.randint(50,250), color = "random", ring=True, strobo_mode = False, sleep_time = 10)
+            lightshow.random_Sparkles(self.sender, self.stripes, n_sparks=random.randint(50,250), color = "random", ring=True, strobo_mode = False, sleep_time = 10)
         elif(a == 8):
-            lightshow.moving_areas(self.sender, area_width=20, n_areas=1)
+            lightshow.moving_areas(self.sender, self.stripes, area_width=40, n_areas=3, n_moves = 5)
 
+        self.stripes = [self.start_value for i in range(PIXELS)]
 
 
 
@@ -172,7 +184,10 @@ class Receiver():
 def main():
     arcadekicker = ArcadeKicker()
     while True:
-        arcadekicker.step()
+        try:
+            arcadekicker.step()
+        except Exception as e:
+            print("Error in step function", e)
 
     """
     with Receiver() as recv:
