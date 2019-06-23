@@ -5,7 +5,7 @@ from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
 
 PIXEL_COUNT = 180
 np = neopixel.NeoPixel(machine.Pin(13), PIXEL_COUNT)
-
+SAMPLE_COUNT = 600
 
 class Module(object):
     def __init__(self, pixels, color=None, intensity=1.0):
@@ -182,5 +182,42 @@ def main():
         #cycle(rp, pixel_count)
 
 
+def debug_main():
+    adc = machine.ADC(machine.Pin(33))
+    adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
+    adc.width(machine.ADC.WIDTH_12BIT)  # 3,6V input
+    color = (0,5,20)
+    for i in range(PIXEL_COUNT):
+        np[i] = color
+    np.write()
+    max_val = 1
+    while True:
+        sum_val = 0
+        val = []
+        x = ticks_ms()
+        y = 0
+        y_max = 0
+        for i in range(100000):
+            a = adc.read()
+            y += a
+            y_max = max(a,y_max)
+
+        print("The master value", y/100000, y_max)
+        return
+
+        for i in range(1000):
+            val.append( adc.read() )
+        print("ticks per iterations ", ticks_diff(ticks_ms(),x)/1000)
+        mean_val = sum(val)/len(val)
+        sum_val = sum([abs(x - mean_val) for x in val])
+        print(sum_val)
+        max_val = max(max_val, sum_val )
+        for i in range(PIXEL_COUNT):
+            np[i] = tuple(int(sum_val/max_val * x) for x in color)
+
+        np.write()
+        sleep_ms(1)
+
 if __name__ == "__main__":
-    main()
+    #main()
+    debug_main()
