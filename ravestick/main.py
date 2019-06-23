@@ -6,42 +6,88 @@ from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
 PIXEL_COUNT = 180
 np = neopixel.NeoPixel(machine.Pin(13), PIXEL_COUNT)
 
+
 class Module(object):
-    def __init__(self, np, pixels, color=None):
-        self.np = np
+    def __init__(self, pixels, color=None, intensity=1.0):
         self.pixels = pixels
         self.color = color
+        self.intensity = intensity
 
-    def all_pixels(self, onoff=True, color=None):
+    def all_pixels(self, onoff=True):
         if onoff:
-            if not color:
-                color = self.color
-            if not color:
-                color = (100, 100, 100)
+            color = self._color_intensity()
         else:
             color = (0, 0, 0)
         for pixel in self.pixels:
             np[pixel] = color
 
-class Kieme(Module):
+    def _color_intensity(self):
+        return tuple(int(self.intensity * self.color[i]) for i in range(3))
+
+
+class SoundIntensity:
+    '''
+    Map microphone input to intensities
+    TODO maybe add weighted (new intensities are more important)
+    '''
+    def __init__(self):
+        self.buffer = [0] * 1000 #  (for smoothing)
+        self.index = 0
+        self.adc = machine.ADC(machine.Pin(33))
+        self.adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
+        self.adc.width(machine.ADC.ADC_WIDTH_9Bit)  # 3,6V input
+
+    def current_average(self):
+        return sum(self.buffer) / len(self.buffer)
+
+    def _new_value(self, val):
+        '''
+        :val: float from 0 to 1
+        '''
+        self.buffer[self.index] = val
+        self.index = (self.index + 1) % len(self.buffer)
+
+    def next(self):
+        self._new_value(self.adc.read() / 512)
+        return self.current_average()
+
+
+class Gills:
+    def __init__(self, lefts, rights):
+        self.lefts = lefts
+        self.rights = rights
+        self.sound_intensity = SoundIntensity()
+
+    def step(self, ticks):
+        # get sound intensity
+        avg_intensity = self.sound_intensity.next()
+        print(avg_intensity)
+        avg_intensity = 1.0
+
+        for gill in self.lefts + self.rights:
+            gill.intensity = avg_intensity
+            gill.all_pixels()
+
+
+class Gill(Module):
     '''
     Only ONE kieme
     '''
-    def __init__(self, pixels, color):
-        super(Kieme, self).__init__(np, pixels, color)
-        self.all_pixels(True, color) 
+    def __init__(self, pixels, color, intensity):
+        super(Gill, self).__init__(pixels, color, intensity)
+        self.all_pixels()
 
     def step(self, ticks):
         pass
-        
+
 
 
 class Eye(Module):
-    def __init__(self, np, pixels, color):
-        super(Eye, self).__init__(np, pixels, color)
+    def __init__(self, pixels, color):
+        super(Eye, self).__init__(pixels, color)
         self.blink_end = None
         self.blink_duration = 100
-        self.all_pixels(True, color)
+        self.all_pixels(True)
 
     def blink(self, ticks):
         print('blink')
@@ -109,9 +155,13 @@ def clear(np, pixel_count):
 
 
 def main():
-    left_eye = Eye(np, list(range(12)), (200, 0, 0))
-    right_eye = Eye(np, list(range(12, 24)), (0, 200, 0))
-    modules = [left_eye, right_eye]
+    left_eye = Eye(list(range(12)), (200, 0, 0))
+    right_eye = Eye(list(range(12, 24)), (0, 200, 0))
+    # gills
+    gills_singles = [Gill(list(pixels), color=(200, 50, 100), intensity=1.0) for pixels in [range(24, 30), range(30, 36), range(36, 42), range(42, 48)]]
+    gills = Gills(gills_singles, [])  # treat all as lefties for now...
+
+    modules = [left_eye, right_eye, gills]
 
     i = 0
 
