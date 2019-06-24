@@ -197,6 +197,7 @@ def debug_main():
         x = ticks_ms()
         y = 0
         y_max = 0
+        """
         for i in range(100000):
             a = adc.read()
             y += a
@@ -204,13 +205,13 @@ def debug_main():
 
         print("The master value", y/100000, y_max)
         return
-
+        """
         for i in range(1000):
             val.append( adc.read() )
-        print("ticks per iterations ", ticks_diff(ticks_ms(),x)/1000)
+        #print("ticks per iterations ", ticks_diff(ticks_ms(), x)/1000)
         mean_val = sum(val)/len(val)
         sum_val = sum([abs(x - mean_val) for x in val])
-        print(sum_val)
+        print(sum_val/len(val), "with mean", mean_val)
         max_val = max(max_val, sum_val )
         for i in range(PIXEL_COUNT):
             np[i] = tuple(int(sum_val/max_val * x) for x in color)
