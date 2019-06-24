@@ -5,7 +5,10 @@ from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
 
 PIXEL_COUNT = 180
 np = neopixel.NeoPixel(machine.Pin(13), PIXEL_COUNT)
-SAMPLE_COUNT = 600
+SAMPLE_COUNT = 200  # TODO tweak
+MEAN_VOLTAGE = 1000
+WINDOW_LENGTH = 40  # TODO tweak
+
 
 class Module(object):
     def __init__(self, pixels, color=None, intensity=1.0):
@@ -31,14 +34,25 @@ class SoundIntensity:
     TODO maybe add weighted (new intensities are more important)
     '''
     def __init__(self):
-        self.buffer = [0] * 1000 #  (for smoothing)
+        self.buffer = [0] * WINDOW_LENGTH  #  (for smoothing)
         self.index = 0
         self.adc = machine.ADC(machine.Pin(33))
         self.adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
-        self.adc.width(machine.ADC.ADC_WIDTH_9Bit)  # 3,6V input
+        self.adc.width(machine.ADC.WIDTH_12BIT)  # 3,6V input
 
     def current_average(self):
-        return sum(self.buffer) / len(self.buffer)
+        summed = 0
+        weight = WINDOW_LENGTH
+        for i in range(self.index, -1, -1):
+            summed += weight * self.buffer[i]
+            weight -= 1
+
+        for i in range(WINDOW_LENGTH - 1, self.index, -1):
+            summed += weight * self.buffer[i]
+            weight -= 1
+
+        return summed / (WINDOW_LENGTH * (WINDOW_LENGTH +1) / 2)
+
 
     def _new_value(self, val):
         '''
@@ -48,26 +62,36 @@ class SoundIntensity:
         self.index = (self.index + 1) % len(self.buffer)
 
     def next(self):
-        self._new_value(self.adc.read() / 512)
-        return self.current_average()
+        # TODO we need to calculate the average
+        power = 0
+        for i in range(SAMPLE_COUNT):
+            a = abs(self.adc.read() - MEAN_VOLTAGE)
+            power += a
+            if a > 200:
+                print(a)
+
+
+        self._new_value(power / (SAMPLE_COUNT * MEAN_VOLTAGE))
+        # return self.current_average()
 
 
 class Gills:
     def __init__(self, lefts, rights):
         self.lefts = lefts
         self.rights = rights
-        self.sound_intensity = SoundIntensity()
 
     def step(self, ticks):
-        # get sound intensity
-        avg_intensity = self.sound_intensity.next()
-        print(avg_intensity)
-        avg_intensity = 1.0
+        pass
 
+    def all_pixels(self, onoff=True):
         for gill in self.lefts + self.rights:
-            gill.intensity = avg_intensity
-            gill.all_pixels()
+            gill.all_pixels(onoff)
 
+    def update_intensities(self, intensity):
+        for gill in self.lefts + self.rights:
+            gill.intensity = max(0.0, (intensity - 0.1)) * 20
+        # print(intensity)
+        self.all_pixels()
 
 class Gill(Module):
     '''
@@ -154,18 +178,26 @@ def clear(np, pixel_count):
     np.write()
 
 
+
+
 def main():
-    left_eye = Eye(list(range(12)), (200, 0, 0))
-    right_eye = Eye(list(range(12, 24)), (0, 200, 0))
+    left_eye = Eye(list(range(12)), (0, 0, 0))
+    right_eye = Eye(list(range(12, 24)), (0, 0, 0))
     # gills
-    gills_singles = [Gill(list(pixels), color=(200, 50, 100), intensity=1.0) for pixels in [range(24, 30), range(30, 36), range(36, 42), range(42, 48)]]
+    gills_singles = [Gill(list(pixels), color=(100, 20, 5), intensity=1.0) for pixels in [range(24, 30), range(30, 36), range(36, 42), range(42, 48)]]
     gills = Gills(gills_singles, [])  # treat all as lefties for now...
 
     modules = [left_eye, right_eye, gills]
+    sound = SoundIntensity()
 
     i = 0
 
     while True:
+        sound.next()
+        intensity = sound.current_average()
+
+        gills.update_intensities(intensity)
+
         ticks = ticks_ms()
 
         if i % 100 == 0:
@@ -174,50 +206,30 @@ def main():
         for module in modules:
             module.step(ticks)
 
-
         np.write()
         i += 1
-        sleep_ms(50)
+        sleep_ms(2)
         #all_switching(np, pixel_count)
         #cycle(rp, pixel_count)
 
 
-def debug_main():
-    adc = machine.ADC(machine.Pin(33))
-    adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
-    adc.width(machine.ADC.WIDTH_12BIT)  # 3,6V input
-    color = (0,5,20)
-    for i in range(PIXEL_COUNT):
-        np[i] = color
-    np.write()
-    max_val = 1
-    while True:
-        sum_val = 0
-        val = []
-        x = ticks_ms()
-        y = 0
-        y_max = 0
-        for i in range(100000):
-            a = adc.read()
-            y += a
-            y_max = max(a,y_max)
+# def debug_main():
+#     adc = machine.ADC(machine.Pin(33))
+#     adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
+#     adc.width(machine.ADC.WIDTH_12BIT)  # 3,6V input
+#     color = (0,5,20)
+#     for i in range(PIXEL_COUNT):
+#         np[i] = color
+#     np.write()
+#     max_val = 1
+#     while True:
+#         sum_val = 0
+#         val = []
+#         x = ticks_ms()
 
-        print("The master value", y/100000, y_max)
-        return
+#         print("The master value", y/100000, y_max)
+#         return
 
-        for i in range(1000):
-            val.append( adc.read() )
-        print("ticks per iterations ", ticks_diff(ticks_ms(),x)/1000)
-        mean_val = sum(val)/len(val)
-        sum_val = sum([abs(x - mean_val) for x in val])
-        print(sum_val)
-        max_val = max(max_val, sum_val )
-        for i in range(PIXEL_COUNT):
-            np[i] = tuple(int(sum_val/max_val * x) for x in color)
-
-        np.write()
-        sleep_ms(1)
 
 if __name__ == "__main__":
-    #main()
-    debug_main()
+    main()
