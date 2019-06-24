@@ -1,3 +1,4 @@
+import math
 import machine
 import neopixel
 from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
@@ -9,8 +10,10 @@ import uasyncio as asyncio
 
 PIXEL_COUNT = 180
 np = neopixel.NeoPixel(machine.Pin(13), PIXEL_COUNT)
-SAMPLE_COUNT = 200  # TODO tweak
-WINDOW_LENGTH = 50  # TODO tweak
+SAMPLE_COUNT = 170  # TODO tweak
+WINDOW_LENGTH = 20  # TODO tweak
+WINDOW_WEIGHTS = [0.8**i for i in range(30)]
+WEIGHT_SUM = sum(WINDOW_WEIGHTS)
 NORMALIZER_LENGTH = 20 # TODO tweak
 
 
@@ -41,6 +44,7 @@ class SoundIntensity:
         self.long_term_buffer = [0.1] * NORMALIZER_LENGTH
         self.ltb_index = 0
         self.long_term_mean = 0.1
+        self.long_term_std = 0.5
         self.buffer = [0] * WINDOW_LENGTH  #  (for smoothing)
         self.index = 0
         self.adc = machine.ADC(machine.Pin(33))
@@ -50,16 +54,11 @@ class SoundIntensity:
 
     def current_average(self):
         summed = 0
-        weight = WINDOW_LENGTH
-        for i in range(self.index, -1, -1):
+        weight = 1.0
+        for i, weight in zip(i for j in (range(self.index, -1, -1), range(WINDOW_LENGTH - 1, self.index, -1)) for i in j, WINDOW_WEIGHTS):
             summed += weight * self.buffer[i]
-            weight -= 1
 
-        for i in range(WINDOW_LENGTH - 1, self.index, -1):
-            summed += weight * self.buffer[i]
-            weight -= 1
-
-        return summed / (WINDOW_LENGTH * (WINDOW_LENGTH +1) / 2)
+        return summed / (WEIGHT_SUM)
 
 
     def _new_value(self, val):
@@ -86,13 +85,20 @@ class SoundIntensity:
             self.long_term_buffer[self.ltb_index] = cur_val
             self.ltb_index = (self.ltb_index + 1) % len(self.long_term_buffer)
             self.long_term_mean = sum(self.long_term_buffer) / len(self.long_term_buffer)
+            self.long_term_std = 0
+            for v in self.long_term_buffer:
+                self.long_term_std += (v - self.long_term_mean)**2
+            self.long_term_std = math.sqrt(self.long_term_std / (len(self.long_term_buffer) - 1))
             print(cur_val)
 
-        mi, ma = min(self.long_term_buffer), max(self.long_term_buffer)
+        # mi, ma = min(self.long_term_buffer), max(self.long_term_buffer)
 
-        return min(1.0, max(0.01, (cur_val - mi) / max(0.05, ma - mi)))
+        # val =  min(1.0, max(0.00, (cur_val - mi) / max(0.01, ma - mi)))
+        # print(mi, ma, val)
+        # return val**3
+        print((cur_val - self.long_term_mean) / self.long_term_std)
+        return min(1.0, max(0.0, self.long_term_std + (cur_val - self.long_term_mean) / self.long_term_std))
 
-        # return min(1.0, max(0.0, cur_val - (self.long_term_mean / 2)) * 20)  # TODO maybe also calculate the standard deviation and replace 20 with 1/std. Or do min/max normalization!?
 
 
 
@@ -150,7 +156,7 @@ class Eye(Module):
 class ApiHandler:
     def __init__(self):
         pass
-    
+
     def get(self, api_request):
         print(api_request)
         return {'foo': 'bar'}
@@ -160,7 +166,7 @@ async def main():
     left_eye = Eye(list(range(12)), (0, 0, 0))
     right_eye = Eye(list(range(12, 24)), (0, 0, 0))
     # gills
-    gills_singles = [Gill(list(pixels), color=(100, 200, 10), intensity=1.0) for pixels in [range(24, 30), range(30, 36), range(36, 42), range(42, 48)]]
+    gills_singles = [Gill(list(pixels), color=(100, 100, 255), intensity=1.0) for pixels in [range(24, 30), range(30, 36), range(36, 42), range(42, 48)]]
     gills = Gills(gills_singles, [])  # treat all as lefties for now...
 
     modules = [left_eye, right_eye, gills]
@@ -191,5 +197,5 @@ if __name__ == "__main__":
     api_handler = http_api_handler.Handler([(['test'], ApiHandler())])
     loop = asyncio.get_event_loop()
     loop.create_task(main())
-    server = uhttpd.Server([('/api', api_handler)])
+    server = uhttpd.Server([('/api', api_handler)], config={'port':1234})
     server.run()
