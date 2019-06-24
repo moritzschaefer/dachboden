@@ -1,6 +1,10 @@
 import machine
 import neopixel
 from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
+import http_api_handler
+import uhttpd
+import uasyncio as asyncio
+
 #Auge1 0-11 Auge2 12-23 Kiemen1 24-x Kiemen2 x+1-y Inner y+1-max
 
 PIXEL_COUNT = 180
@@ -85,9 +89,8 @@ class SoundIntensity:
             print(cur_val)
 
         mi, ma = min(self.long_term_buffer), max(self.long_term_buffer)
-        
 
-        return min(1.0, max(0.01, (cur_val - mi) / max(0.01, ma - mi)))
+        return min(1.0, max(0.01, (cur_val - mi) / max(0.05, ma - mi)))
 
         # return min(1.0, max(0.0, cur_val - (self.long_term_mean / 2)) * 20)  # TODO maybe also calculate the standard deviation and replace 20 with 1/std. Or do min/max normalization!?
 
@@ -144,7 +147,16 @@ class Eye(Module):
             self.blink_end = None
 
 
-def main():
+class ApiHandler:
+    def __init__(self):
+        pass
+    
+    def get(self, api_request):
+        print(api_request)
+        return {'foo': 'bar'}
+
+
+async def main():
     left_eye = Eye(list(range(12)), (0, 0, 0))
     right_eye = Eye(list(range(12, 24)), (0, 0, 0))
     # gills
@@ -153,6 +165,7 @@ def main():
 
     modules = [left_eye, right_eye, gills]
     sound = SoundIntensity()
+    print('im here')
 
     i = 0
 
@@ -171,28 +184,12 @@ def main():
 
         np.write()
         i += 1
-        sleep_ms(2)
-        #all_switching(np, pixel_count)
-        #cycle(rp, pixel_count)
-
-
-# def debug_main():
-#     adc = machine.ADC(machine.Pin(33))
-#     adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
-#     adc.width(machine.ADC.WIDTH_12BIT)  # 3,6V input
-#     color = (0,5,20)
-#     for i in range(PIXEL_COUNT):
-#         np[i] = color
-#     np.write()
-#     max_val = 1
-#     while True:
-#         sum_val = 0
-#         val = []
-#         x = ticks_ms()
-
-#         print("The master value", y/100000, y_max)
-#         return
+        asyncio.sleep(1)
 
 
 if __name__ == "__main__":
-    main()
+    api_handler = http_api_handler.Handler([(['test'], ApiHandler())])
+    loop = asyncio.get_event_loop()
+    loop.create_task(main())
+    server = uhttpd.Server([('/api', api_handler)])
+    server.run()
