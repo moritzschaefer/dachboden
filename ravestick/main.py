@@ -6,8 +6,8 @@ from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
 PIXEL_COUNT = 180
 np = neopixel.NeoPixel(machine.Pin(13), PIXEL_COUNT)
 SAMPLE_COUNT = 200  # TODO tweak
-MEAN_VOLTAGE = 1000
-WINDOW_LENGTH = 40  # TODO tweak
+WINDOW_LENGTH = 50  # TODO tweak
+NORMALIZER_LENGTH = 20 # TODO tweak
 
 
 class Module(object):
@@ -34,11 +34,15 @@ class SoundIntensity:
     TODO maybe add weighted (new intensities are more important)
     '''
     def __init__(self):
+        self.long_term_buffer = [0.1] * NORMALIZER_LENGTH
+        self.ltb_index = 0
+        self.long_term_mean = 0.1
         self.buffer = [0] * WINDOW_LENGTH  #  (for smoothing)
         self.index = 0
         self.adc = machine.ADC(machine.Pin(33))
         self.adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
         self.adc.width(machine.ADC.WIDTH_12BIT)  # 3,6V input
+        self.mean_voltage = 1000
 
     def current_average(self):
         summed = 0
@@ -62,17 +66,32 @@ class SoundIntensity:
         self.index = (self.index + 1) % len(self.buffer)
 
     def next(self):
-        # TODO we need to calculate the average
         power = 0
+        mean = 0
         for i in range(SAMPLE_COUNT):
-            a = abs(self.adc.read() - MEAN_VOLTAGE)
-            power += a
-            if a > 200:
-                print(a)
+            a = self.adc.read()
+            power += abs(a - self.mean_voltage)
+            mean += a
+
+        self._new_value(power / (SAMPLE_COUNT * self.mean_voltage))
+        cur_val = self.current_average()
+        self.mean_voltage = mean / SAMPLE_COUNT
+
+        # add to long term average
+        if self.index == 0:
+            self.long_term_buffer[self.ltb_index] = cur_val
+            self.ltb_index = (self.ltb_index + 1) % len(self.long_term_buffer)
+            self.long_term_mean = sum(self.long_term_buffer) / len(self.long_term_buffer)
+            print(cur_val)
+
+        mi, ma = min(self.long_term_buffer), max(self.long_term_buffer)
+        
+
+        return min(1.0, max(0.01, (cur_val - mi) / max(0.01, ma - mi)))
+
+        # return min(1.0, max(0.0, cur_val - (self.long_term_mean / 2)) * 20)  # TODO maybe also calculate the standard deviation and replace 20 with 1/std. Or do min/max normalization!?
 
 
-        self._new_value(power / (SAMPLE_COUNT * MEAN_VOLTAGE))
-        # return self.current_average()
 
 
 class Gills:
@@ -89,7 +108,7 @@ class Gills:
 
     def update_intensities(self, intensity):
         for gill in self.lefts + self.rights:
-            gill.intensity = max(0.0, (intensity - 0.1)) * 20
+            gill.intensity = intensity
         # print(intensity)
         self.all_pixels()
 
@@ -125,66 +144,11 @@ class Eye(Module):
             self.blink_end = None
 
 
-def cycle(np, pixel_count):
-    for i in range(4 * pixel_count):
-        for j in range(pixel_count):
-            np[j] = (0, 0, 0)
-        np[i % pixel_count] = (255, 255, 255)
-        np.write()
-        time.sleep(0.25)
-
-
-def bounce(np, pixel_count):
-    for i in range(4 * pixel_count):
-        for j in range(pixel_count):
-            np[j] = (0, 0, 128)
-        if (i // pixel_count) % 2 == 0:
-            np[i % pixel_count] = (0, 0, 0)
-        else:
-            np[pixel_count - 1 - (i % pixel_count)] = (0, 0, 0)
-        np.write()
-        time.sleep(0.60)
-
-def all_switching(np, pixel_count):
-    for j in range(pixel_count):
-        np[j] = (0, 0, 0)
-    for i in range(0, pixel_count,2):
-        np[i % pixel_count] = (2, 4, 8)
-    np.write()
-    time.sleep(0.25)
-
-    for j in range(pixel_count):
-        np[j] = (0, 0, 0)
-    for i in range(1, pixel_count,2):
-        np[i % pixel_count] = (8, 4, 2)
-    np.write()
-    time.sleep(0.25)
-
-
-def fade_in_out(np, pixel_count):
-    for i in range(0, 4 * 256, 8):
-        for j in range(pixel_count):
-            if (i // 256) % 2 == 0:
-                val = i & 0xff
-            else:
-                val = 255 - (i & 0xff)
-            np[j] = (val, 0, 0)
-        np.write()
-
-
-def clear(np, pixel_count):
-    for i in range(pixel_count):
-        np[i] = (0, 0, 0)
-    np.write()
-
-
-
-
 def main():
     left_eye = Eye(list(range(12)), (0, 0, 0))
     right_eye = Eye(list(range(12, 24)), (0, 0, 0))
     # gills
-    gills_singles = [Gill(list(pixels), color=(100, 20, 5), intensity=1.0) for pixels in [range(24, 30), range(30, 36), range(36, 42), range(42, 48)]]
+    gills_singles = [Gill(list(pixels), color=(100, 200, 10), intensity=1.0) for pixels in [range(24, 30), range(30, 36), range(36, 42), range(42, 48)]]
     gills = Gills(gills_singles, [])  # treat all as lefties for now...
 
     modules = [left_eye, right_eye, gills]
@@ -193,8 +157,7 @@ def main():
     i = 0
 
     while True:
-        sound.next()
-        intensity = sound.current_average()
+        intensity = sound.next()
 
         gills.update_intensities(intensity)
 
