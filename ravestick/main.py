@@ -186,7 +186,7 @@ def debug_main():
     adc = machine.ADC(machine.Pin(33))
     adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
     adc.width(machine.ADC.WIDTH_12BIT)  # 3,6V input
-    color = (0,5,20)
+    color = (0,4,20)
     for i in range(PIXEL_COUNT):
         np[i] = color
     np.write()
