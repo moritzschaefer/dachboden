@@ -202,13 +202,15 @@ class Eye(Module):
             self.eye_time = ticks_ms()
             self.eye_pos = (self.eye_pos + 1) % 12
             eye_percentage = 1
+        for p in self.pixels:
+            np[p] = (0,0,0)
         for i in range(EYE_WIDTH):
             if i == 0:
                 np[self.pixels[0] + self.eye_pos] = tuple(int((1 - eye_percentage) * x) for x in self.color)
-            elif i == EYE_WIDTH - 1:
-                np[self.pixels[0] + (i + self.eye_pos) % 12] = tuple(int(eye_percentage * x) for x in self.color)
+            elif i == (EYE_WIDTH - 1):
+                np[self.pixels[0] + ((i + self.eye_pos) % 12)] = tuple(int(eye_percentage * x) for x in self.color)
             else:
-                np[self.pixels[0] + (i + self.eye_pos) % 12] = self.color
+                np[self.pixels[0] + ((i + self.eye_pos) % 12)] = self.color
 
 
 class ApiHandler:
