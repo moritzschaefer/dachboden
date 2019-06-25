@@ -5,7 +5,7 @@ from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
 import http_api_handler
 import uhttpd
 import uasyncio as asyncio
-
+from math import sin
 #Auge1 0-11 Auge2 12-23 Kiemen1 24-x Kiemen2 x+1-y Inner y+1-max
 
 PIXEL_COUNT = 180
@@ -20,7 +20,7 @@ EYES_STEPTIME = 100
 STROBE_LENGTH = 10
 STROBE_TOTAL = 5000
 #GILLS_PULSETIME = 5000
-
+PULSE_FACTOR = 0.0005
 class Module(object):
     def __init__(self, pixels, color=None, intensity=1.0):
         self.pixels = pixels
@@ -194,7 +194,13 @@ class Eye(Module):
                 self.all_pixels(True)
                 self.blink_end = None
         else:
-            self.rotating_eye(ticks)
+            self.pulse_eye(ticks)
+
+    def pulse_eye(self, ticks):
+        self.intensity = (sin(PULSE_FACTOR * abs(ticks_diff(ticks,self.eye_time))) + 1.2 )/ 2.2
+        self.all_pixels(True)
+
+
 
     def rotating_eye(self, ticks):
         eye_percentage = abs(ticks_diff(self.eye_time, ticks)) / float(EYES_STEPTIME)
@@ -304,6 +310,7 @@ class ApiHandler:
 def init_modules():
     right_eye = Eye(list(range(12)), (100, 0, 0))
     left_eye = Eye(list(range(12, 24)), (100, 0, 0))
+    left_eye.eye_time = right_eye.eye_time # Pretty hacky but syncronizes the pulse
     # gills
     gills = Gills([Gill(list(range(24, 69)), color=(0, 0, 20), intensity=1.0)], [Gill(list(range(71, 131)), color=(0, 0, 20), intensity=1.0)])  # treat all as lefties for now...
 
