@@ -17,7 +17,8 @@ WEIGHT_SUM = sum(WINDOW_WEIGHTS)
 NORMALIZER_LENGTH = 20 # TODO tweak
 EYE_WIDTH = 3
 EYES_STEPTIME = 100
-STROBO_LENGTH = 100
+STROBE_LENGTH = 10
+STROBE_TOTAL = 5000
 #GILLS_PULSETIME = 5000
 
 class Module(object):
@@ -112,9 +113,24 @@ class Gills:
         self.lefts = lefts
         self.rights = rights
         self.mode = 'normal'
+        self.next_tick = None
 
     def step(self, ticks):
-        pass
+        if self.mode == 'strobo':
+            if ticks_diff(self.next_tick, ticks) < 0:
+                for gill in self.lefts + self.rights:
+                    if self._strobo_on:
+                        gill.intensity = 0
+                        self.next_tick = (ticks_add(ticks, STROBE_LENGTH * 3))
+                    else:
+                        gill.intensity = 1
+                        self.next_tick = (ticks_add(ticks, STROBE_LENGTH))
+                self._strobo_on = not self._strobo_on
+                if ticks_diff(self.last_tick, ticks) < 0:
+                    self.setmode(self._last_mode)
+
+                # print(intensity)
+                self.all_pixels()
 
     def all_pixels(self, onoff=True):
         for gill in self.lefts + self.rights:
@@ -126,26 +142,24 @@ class Gills:
                 gill.intensity = intensity
             # print(intensity)
             self.all_pixels()
-        else:
-            pass
 
-    def set(self, mode):
-        if mode != 'normal':
-            for gill in self.lefts + self.rights:
-                gill.intensity = mode
-            self.all_pixels()
-            #self.update_intensities(mode)
+    def setmode(self, mode, value=0.3):
+        self._last_mode = self.mode
         self.mode = mode
-
-    #TODO Does the get request block the main? Otherwise this can lead to chaos...
-    def strobo(self):
-        for i in range(STROBO_LENGTH*2):
+        if mode == 'strobo':
+            self._strobo_on = False
             for gill in self.lefts + self.rights:
-                for p in gill.pixels:
-
-                    np[p] = (100,100,100) if i %2 else (0,0,0)
-            np.write(5)
-        self.all_pixels()
+                gill.color = (100, 100, 100)
+                self.next_tick = ticks_ms()
+                self.last_tick = ticks_add(ticks_ms(), STROBE_TOTAL)
+        elif mode == 'normal':
+            for gill in self.lefts + self.rights:
+                gill.color = (0, 0, 20)
+        elif mode == 'color':
+            for gill in self.lefts + self.rights:
+                gill.intensity = value
+                gill.color = (0, 0, 20)
+                self.all_pixels()
 
 
 class Gill(Module):
@@ -205,13 +219,13 @@ class ApiHandler:
         return '''
         <html><head><title>MantaControl</title></head>
         <body>
-        <button onclick="call('/api/left_eye')">Zwinker Links</button>
-        <button onclick="call('/api/right_eye')">Zwinker Rechts</button>
-        <button onclick="call('/api/strobo')">Strobo</button>        
+        <button onclick="call('left_eye')">Zwinker Links</button>
+        <button onclick="call('right_eye')">Zwinker Rechts</button>
+        <button onclick="call('strobo')">Strobo</button>        
         <input type="color" id="color"/>
         <label><input type="checkbox" id="color_loop" onclick="handleClick(this)"/>Color loop</label>
-        <label><input type="checkbox" id="music" onclick="handleMusic(this)"/>Music</label>
-        <input type="range" min=0 max=1 step=0.02 id="range"/>
+        <label><input type="checkbox" id="music" onclick="handleMusic(this)" checked/>Music</label>
+        <input type="range" min=0 max=4 step=0.02 id="range"/>
         <p id="result">Press a button</p>
         <script type="text/javascript">
         var range = document.getElementById("range");
@@ -221,7 +235,7 @@ class ApiHandler:
 
         }, false);
         function handleClick(cb) {
-        call('color_loop', cb.checked);
+        call('color_loop', cb.checked ? 1 : 0);
         }
         function handleMusic(cb) {
         if(cb.checked)
@@ -229,7 +243,7 @@ class ApiHandler:
         else
             call('gill_control', document.getElementById("range").value);
         }
-        function call(path, val) {
+        function call(operation, val) {
         var xhttp = new XMLHttpRequest();
         document.getElementById("result").innerHTML = "calling";
         xhttp.onreadystatechange = function() {
@@ -237,15 +251,16 @@ class ApiHandler:
             document.getElementById("result").innerHTML = "done";
             }
         };
+        var path = "/api?operation=" + operation;
         if(val) {
-        path = path + "?value=" + val;
+         path += "&value=" + val;
         }
         xhttp.open("GET", path, true);
         xhttp.send();
         }
         var cp = document.getElementById('color');
         cp.addEventListener("change", function(event) {
-        call('color', event.target.value);
+        call('color', event.target.value.substr(1));
         }, false);
 
         </script>
@@ -256,37 +271,37 @@ class ApiHandler:
     def get(self, api_request):
         print(api_request)
         # TODO Not sure if bullshit or handled right, see https://github.com/fadushin/esp8266/tree/master/micropython/uhttpd  Api Handlers... Inputs
-        operation =  api_request['prefix']
+        operation =  api_request['query_params'].get('operation', 'index')
         if 'left_eye' == operation:
             self.modules['left_eye'].blink()
         elif 'right_eye' == operation:
             self.modules['right_eye'].blink()
         elif 'strobo' == operation:
-            self.modules['gills'].strobo()
+            self.modules['gills'].setmode('strobo')
         elif 'color_loop'  == operation:
-            value = bool(api_request['query_params']['value'])
+            value = int(api_request['query_params']['value']) == 1
             self.modules['left_eye'].color_loop = value
             self.modules['right_eye'].color_loop = value
-        elif 'color'  == operation:
+        elif 'color' == operation:
             html_color = api_request['query_params']['value']
-            value = tuple(int(html_color[i:i+2], 16) for i in (1, 3, 5))
+            value = tuple(int(html_color[i:i+2], 16) for i in (0, 2, 4))
             self.modules['left_eye'].color = value
             self.modules['right_eye'].color = value
             self.modules['left_eye'].all_pixels()
             self.modules['right_eye'].all_pixels()
         elif 'gill_control'  == operation:
-            value = api_request['query_params']['value']
+            value = float(api_request['query_params']['value'])
             if value == -1:
-                self.modules['gills'].set('normal')
+                self.modules['gills'].setmode('normal')
             else:
-                self.modules['gills'].set(value)
+                self.modules['gills'].setmode('color', value)
 
-        else: #operation == "":
+        elif operation == 'index': 
             return self.index()
 
 def init_modules():
-    left_eye = Eye(list(range(12)), (100, 0, 0))
-    right_eye = Eye(list(range(12, 24)), (100, 0, 0))
+    right_eye = Eye(list(range(12)), (100, 0, 0))
+    left_eye = Eye(list(range(12, 24)), (100, 0, 0))
     # gills
     gills = Gills([Gill(list(range(24, 69)), color=(0, 0, 20), intensity=1.0)], [Gill(list(range(71, 131)), color=(0, 0, 20), intensity=1.0)])  # treat all as lefties for now...
 
@@ -295,8 +310,6 @@ def init_modules():
 
 async def main(modules):
     sound = SoundIntensity()
-    print('im here')
-
 
     while True:
         intensity = sound.next()
@@ -315,7 +328,7 @@ async def main(modules):
 
 if __name__ == "__main__":
     modules = init_modules()
-    api_handler = http_api_handler.Handler([(['left_eye', 'right_eye', 'strobo','color_loop', 'color', 'gill_control'], ApiHandler(modules))])
+    api_handler = http_api_handler.Handler([([''], ApiHandler(modules))])
     loop = asyncio.get_event_loop()
     loop.create_task(main(modules))
     server = uhttpd.Server([('/api', api_handler)])
