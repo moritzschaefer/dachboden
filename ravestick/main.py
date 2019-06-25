@@ -1,11 +1,22 @@
+import math
 import machine
 import neopixel
 from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
+import http_api_handler
+import uhttpd
+import uasyncio as asyncio
+
 #Auge1 0-11 Auge2 12-23 Kiemen1 24-x Kiemen2 x+1-y Inner y+1-max
 
 PIXEL_COUNT = 180
 np = neopixel.NeoPixel(machine.Pin(13), PIXEL_COUNT)
-SAMPLE_COUNT = 600
+SAMPLE_COUNT = 170  # TODO tweak
+WINDOW_LENGTH = 20  # TODO tweak
+WINDOW_WEIGHTS = [0.8**i for i in range(WINDOW_LENGTH)]
+WEIGHT_SUM = sum(WINDOW_WEIGHTS)
+NORMALIZER_LENGTH = 20 # TODO tweak
+EYE_WIDTH = 3
+EYES_STEPTIME = 100
 
 class Module(object):
     def __init__(self, pixels, color=None, intensity=1.0):
@@ -31,14 +42,25 @@ class SoundIntensity:
     TODO maybe add weighted (new intensities are more important)
     '''
     def __init__(self):
-        self.buffer = [0] * 1000 #  (for smoothing)
+        self.long_term_buffer = [0.1] * NORMALIZER_LENGTH
+        self.ltb_index = 0
+        self.long_term_mean = 0.1
+        self.long_term_std = 0.5
+        self.buffer = [0] * WINDOW_LENGTH  #  (for smoothing)
         self.index = 0
         self.adc = machine.ADC(machine.Pin(33))
         self.adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
-        self.adc.width(machine.ADC.ADC_WIDTH_9Bit)  # 3,6V input
+        self.adc.width(machine.ADC.WIDTH_12BIT)  # 3,6V input
+        self.mean_voltage = 1000
 
     def current_average(self):
-        return sum(self.buffer) / len(self.buffer)
+        summed = 0
+        weight = 1.0
+        for i, weight in zip((i for j in (range(self.index, -1, -1), range(WINDOW_LENGTH - 1, self.index, -1)) for i in j), WINDOW_WEIGHTS):
+            summed += weight * self.buffer[i]
+
+        return summed / (WEIGHT_SUM)
+
 
     def _new_value(self, val):
         '''
@@ -48,25 +70,67 @@ class SoundIntensity:
         self.index = (self.index + 1) % len(self.buffer)
 
     def next(self):
-        self._new_value(self.adc.read() / 512)
-        return self.current_average()
+        power = 0
+        mean = 0
+        for i in range(SAMPLE_COUNT):
+            a = self.adc.read()
+            power += abs(a - self.mean_voltage)
+            mean += a
+
+        self._new_value(power / (SAMPLE_COUNT * self.mean_voltage))
+        cur_val = self.current_average()
+        self.mean_voltage = mean / SAMPLE_COUNT
+
+        # add to long term average
+        if self.index == 0:
+            sum(self.buffer) / len(self.buffer)
+
+            self.long_term_buffer[self.ltb_index] = sum(self.buffer) / len(self.buffer)
+            self.ltb_index = (self.ltb_index + 1) % len(self.long_term_buffer)
+            self.long_term_mean = sum(self.long_term_buffer) / len(self.long_term_buffer)
+            self.long_term_std = 0
+            for v in self.long_term_buffer:
+                self.long_term_std += (v - self.long_term_mean)**2
+            self.long_term_std = math.sqrt(self.long_term_std / (len(self.long_term_buffer) - 1))
+
+        # mi, ma = min(self.long_term_buffer), max(self.long_term_buffer)
+
+        # val =  min(1.0, max(0.00, (cur_val - mi) / max(0.01, ma - mi)))
+        # print(mi, ma, val)
+        # return val**3
+        # print((cur_val - self.long_term_mean) / self.long_term_std)
+
+        intensity = self.long_term_std + (cur_val - self.long_term_mean) / self.long_term_std
+        # print(intensity)
+        return min(1.0, max(0.0, intensity))
 
 
 class Gills:
     def __init__(self, lefts, rights):
         self.lefts = lefts
         self.rights = rights
-        self.sound_intensity = SoundIntensity()
+        self.mode = 'normal'
 
     def step(self, ticks):
-        # get sound intensity
-        avg_intensity = self.sound_intensity.next()
-        print(avg_intensity)
-        avg_intensity = 1.0
+        pass
 
+    def all_pixels(self, onoff=True):
         for gill in self.lefts + self.rights:
-            gill.intensity = avg_intensity
-            gill.all_pixels()
+            gill.all_pixels(onoff)
+
+    def update_intensities(self, intensity):
+        if mode == 'normal':
+            for gill in self.lefts + self.rights:
+                gill.intensity = intensity
+            # print(intensity)
+            self.all_pixels()
+        else:
+            pass
+
+    def set(self, mode):
+        if mode != 'normal':
+            self.update_intensities(mode)
+        self.mode = None
 
 
 class Gill(Module):
@@ -81,144 +145,161 @@ class Gill(Module):
         pass
 
 
-
 class Eye(Module):
     def __init__(self, pixels, color):
         super(Eye, self).__init__(pixels, color)
         self.blink_end = None
-        self.blink_duration = 100
+        self.blink_duration = 150
         self.all_pixels(True)
+        self.color_loop = False
+        self.eye_time = ticks_ms()
+        self.eye_pos = 0
 
-    def blink(self, ticks):
-        print('blink')
-        self.blink_end = ticks_add(ticks, self.blink_duration)
+    def blink(self):
+        self.blink_end = ticks_add(ticks_ms(), self.blink_duration)
         self.all_pixels(False)
 
     def step(self, ticks):
-        if self.blink_end is not None and ticks_diff(self.blink_end, ticks) < 0:
-            print('blink end')
-            self.all_pixels(True)
-            self.blink_end = None
-
-
-def cycle(np, pixel_count):
-    for i in range(4 * pixel_count):
-        for j in range(pixel_count):
-            np[j] = (0, 0, 0)
-        np[i % pixel_count] = (255, 255, 255)
-        np.write()
-        time.sleep(0.25)
-
-
-def bounce(np, pixel_count):
-    for i in range(4 * pixel_count):
-        for j in range(pixel_count):
-            np[j] = (0, 0, 128)
-        if (i // pixel_count) % 2 == 0:
-            np[i % pixel_count] = (0, 0, 0)
+        if not self.color_loop:
+            if self.blink_end is not None and ticks_diff(self.blink_end, ticks) < 0:
+                self.all_pixels(True)
+                self.blink_end = None
         else:
-            np[pixel_count - 1 - (i % pixel_count)] = (0, 0, 0)
-        np.write()
-        time.sleep(0.60)
-
-def all_switching(np, pixel_count):
-    for j in range(pixel_count):
-        np[j] = (0, 0, 0)
-    for i in range(0, pixel_count,2):
-        np[i % pixel_count] = (2, 4, 8)
-    np.write()
-    time.sleep(0.25)
-
-    for j in range(pixel_count):
-        np[j] = (0, 0, 0)
-    for i in range(1, pixel_count,2):
-        np[i % pixel_count] = (8, 4, 2)
-    np.write()
-    time.sleep(0.25)
+            #Rotating Eyes   color loop code!!!
+            eye_percentage = abs(ticks_diff(self.eye_time, ticks_ms())) / float(EYES_STEPTIME)
+            if (eye_percentage >= 1):
+                self.eye_time = ticks_ms()
+                self.eye_pos = (self.eye_pos + 1) % 12
+            for pixels in self.pixels:
+                np[pixels] = (0,0,0)
+            for i in range(EYE_WIDTH):
+                if (i == 0):
+                    np[self.pixels[0] + self.eye_pos] = tuple(int((1 - eye_percentage) * x ) for x in self.color)
+                elif (i == EYE_WIDTH- 1):
+                    np[self.pixels[0] + (i + self.eye_pos) % 12] = tuple(int(eye_percentage * x) for x in self.color)
+                else:
+                    np[self.pixels[0] + (i + self.eye_pos) % 12] = self.color
 
 
-def fade_in_out(np, pixel_count):
-    for i in range(0, 4 * 256, 8):
-        for j in range(pixel_count):
-            if (i // 256) % 2 == 0:
-                val = i & 0xff
+class ApiHandler:
+    def __init__(self, modules):
+        self.modules = modules
+
+    def index(self):
+        return '''
+        <html><head><title>MantaControl</title></head>
+        <body>
+        <button onclick="call('/api/left_eye')">Zwinker Links</button>
+        <button onclick="call('/api/right_eye')">Zwinker Rechts</button>
+        <input type="color" id="color"/>
+        <label><input type="checkbox" id="color_loop" onclick="handleClick(this)"/>Color loop</label>
+        <label><input type="checkbox" id="music" onclick="handleMusic(this)"/>Music</label>
+        <input type="range" min=0 max=1 step=0.02 id="range"/>
+        <p id="result">Press a button</p>
+        <script type="text/javascript">
+        var range = document.getElementById("range");
+        range.addEventListener("change", function(event) {
+        if(document.getElementById("music").value)
+            call('gill_control', event.target.value);
+
+        }, false);
+        function handleClick(cb) {
+        call('color_loop', cb.checked);
+        }
+        function handleMusic(cb) {
+        if(cb.checked)
+            call('gill_control', -1);
+        else
+            call('gill_control', document.getElementById("range").value);
+        }
+        function call(path, val) {
+        var xhttp = new XMLHttpRequest();
+        document.getElementById("result").innerHTML = "calling";
+        xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("result").innerHTML = "done";
+            }
+        };
+        if(val) {
+        path = path + "?value=" + val;
+        }
+        xhttp.open("GET", path, true);
+        xhttp.send();
+        }
+        var cp = document.getElementById('color');
+        cp.addEventListener("change", function(event) {
+        call('color', event.target.value);
+        }, false);
+
+        </script>
+        </body>
+        </html>
+        '''
+
+    def get(self, api_request):
+        print(api_request)
+
+        operation =  api_request['path']
+        if 'left_eye' == operation:
+            self.modules['left_eye'].blink()
+        if right_eye:
+            self.modules['right_eye'].blink()
+        if color_loop:
+            value = False/True  # TODO
+            self.modules['left_eye'].color_loop = value
+            self.modules['right_eye'].color_loop = value
+        if color:
+            # TODO get HTML inputs!!
+
+            value = tuple(int(html_color[i:i+2], 16) for i in (1, 3, 5))
+            self.modules['left_eye'].color = value
+            self.modules['right_eye'].color = value
+            self.modules['left_eye'].all_pixels()
+            self.modules['right_eye'].all_pixels()
+            
+
+        if gill_control:
+            if value < 0:
+                self.modules.gills.set('normal')
             else:
-                val = 255 - (i & 0xff)
-            np[j] = (val, 0, 0)
-        np.write()
+                self.modules.gills.set(value)
 
+        if operation == "":
+            return index()
 
-def clear(np, pixel_count):
-    for i in range(pixel_count):
-        np[i] = (0, 0, 0)
-    np.write()
-
-
-def main():
-    left_eye = Eye(list(range(12)), (200, 0, 0))
-    right_eye = Eye(list(range(12, 24)), (0, 200, 0))
+def init_modules():
+    left_eye = Eye(list(range(12)), (100, 0, 0))
+    right_eye = Eye(list(range(12, 24)), (100, 0, 0))
     # gills
-    gills_singles = [Gill(list(pixels), color=(200, 50, 100), intensity=1.0) for pixels in [range(24, 30), range(30, 36), range(36, 42), range(42, 48)]]
-    gills = Gills(gills_singles, [])  # treat all as lefties for now...
+    gills = Gills([Gill(list(range(24, 69)), color=(0, 0, 20), intensity=1.0)], [Gill(list(range(71, 131)), color=(0, 0, 20), intensity=1.0)])  # treat all as lefties for now...
 
-    modules = [left_eye, right_eye, gills]
+    return {'gills': gills, 'left_eye': left_eye, 'right_eye': right_eye}
 
-    i = 0
+
+async def main(modules):
+    sound = SoundIntensity()
+    print('im here')
+
 
     while True:
+        intensity = sound.next()
+
+        modules['gills'].update_intensities(intensity)
+
         ticks = ticks_ms()
 
-        if i % 100 == 0:
-            left_eye.blink(ticks)
-
-        for module in modules:
+        for module in modules.values():
             module.step(ticks)
 
-
         np.write()
-        i += 1
-        sleep_ms(50)
-        #all_switching(np, pixel_count)
-        #cycle(rp, pixel_count)
 
+        await asyncio.sleep_ms(1)
 
-def debug_main():
-    adc = machine.ADC(machine.Pin(33))
-    adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
-    adc.width(machine.ADC.WIDTH_12BIT)  # 3,6V input
-    color = (0,4,20)
-    for i in range(PIXEL_COUNT):
-        np[i] = color
-    np.write()
-    max_val = 1
-    while True:
-        sum_val = 0
-        val = []
-        x = ticks_ms()
-        y = 0
-        y_max = 0
-        """
-        for i in range(100000):
-            a = adc.read()
-            y += a
-            y_max = max(a,y_max)
-
-        print("The master value", y/100000, y_max)
-        return
-        """
-        for i in range(1000):
-            val.append( adc.read() )
-        #print("ticks per iterations ", ticks_diff(ticks_ms(), x)/1000)
-        mean_val = sum(val)/len(val)
-        sum_val = sum([abs(x - mean_val) for x in val])
-        print(sum_val/len(val), "with mean", mean_val)
-        max_val = max(max_val, sum_val )
-        for i in range(PIXEL_COUNT):
-            np[i] = tuple(int(sum_val/max_val * x) for x in color)
-
-        np.write()
-        sleep_ms(1)
 
 if __name__ == "__main__":
-    #main()
-    debug_main()
+    modules = init_modules()
+    api_handler = http_api_handler.Handler([(['left_eye', 'right_eye', 'color_loop', 'color', 'gill_control'], ApiHandler(modules))])
+    loop = asyncio.get_event_loop()
+    loop.create_task(main(modules))
+    server = uhttpd.Server([('/api', api_handler)])
+    server.run()
