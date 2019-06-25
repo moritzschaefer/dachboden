@@ -17,6 +17,8 @@ WEIGHT_SUM = sum(WINDOW_WEIGHTS)
 NORMALIZER_LENGTH = 20 # TODO tweak
 EYE_WIDTH = 3
 EYES_STEPTIME = 100
+STROBO_LENGTH = 100
+#GILLS_PULSETIME = 5000
 
 class Module(object):
     def __init__(self, pixels, color=None, intensity=1.0):
@@ -119,7 +121,7 @@ class Gills:
             gill.all_pixels(onoff)
 
     def update_intensities(self, intensity):
-        if mode == 'normal':
+        if self.mode == 'normal':
             for gill in self.lefts + self.rights:
                 gill.intensity = intensity
             # print(intensity)
@@ -129,8 +131,21 @@ class Gills:
 
     def set(self, mode):
         if mode != 'normal':
-            self.update_intensities(mode)
-        self.mode = None
+            for gill in self.lefts + self.rights:
+                gill.intensity = mode
+            self.all_pixels()
+            #self.update_intensities(mode)
+        self.mode = mode
+
+    #TODO Does the get request block the main? Otherwise this can lead to chaos...
+    def strobo(self):
+        for i in range(STROBO_LENGTH*2):
+            for gill in self.lefts + self.rights:
+                for p in gill.pixels:
+
+                    np[p] = (100,100,100) if i %2 else (0,0,0)
+            np.write(5)
+        self.all_pixels()
 
 
 class Gill(Module):
@@ -165,20 +180,21 @@ class Eye(Module):
                 self.all_pixels(True)
                 self.blink_end = None
         else:
-            #Rotating Eyes   color loop code!!!
-            eye_percentage = abs(ticks_diff(self.eye_time, ticks_ms())) / float(EYES_STEPTIME)
-            if (eye_percentage >= 1):
-                self.eye_time = ticks_ms()
-                self.eye_pos = (self.eye_pos + 1) % 12
-            for pixels in self.pixels:
-                np[pixels] = (0,0,0)
-            for i in range(EYE_WIDTH):
-                if (i == 0):
-                    np[self.pixels[0] + self.eye_pos] = tuple(int((1 - eye_percentage) * x ) for x in self.color)
-                elif (i == EYE_WIDTH- 1):
-                    np[self.pixels[0] + (i + self.eye_pos) % 12] = tuple(int(eye_percentage * x) for x in self.color)
-                else:
-                    np[self.pixels[0] + (i + self.eye_pos) % 12] = self.color
+            self.rotating_eye(ticks)
+
+    def rotating_eye(self, ticks):
+        eye_percentage = abs(ticks_diff(self.eye_time, ticks)) / float(EYES_STEPTIME)
+        if eye_percentage >= 1:
+            self.eye_time = ticks_ms()
+            self.eye_pos = (self.eye_pos + 1) % 12
+            eye_percentage = 1
+        for i in range(EYE_WIDTH):
+            if i == 0:
+                np[self.pixels[0] + self.eye_pos] = tuple(int((1 - eye_percentage) * x) for x in self.color)
+            elif i == EYE_WIDTH - 1:
+                np[self.pixels[0] + (i + self.eye_pos) % 12] = tuple(int(eye_percentage * x) for x in self.color)
+            else:
+                np[self.pixels[0] + (i + self.eye_pos) % 12] = self.color
 
 
 class ApiHandler:
@@ -191,6 +207,7 @@ class ApiHandler:
         <body>
         <button onclick="call('/api/left_eye')">Zwinker Links</button>
         <button onclick="call('/api/right_eye')">Zwinker Rechts</button>
+        <button onclick="call('/api/strobo')">Strobo</button>        
         <input type="color" id="color"/>
         <label><input type="checkbox" id="color_loop" onclick="handleClick(this)"/>Color loop</label>
         <label><input type="checkbox" id="music" onclick="handleMusic(this)"/>Music</label>
@@ -238,34 +255,34 @@ class ApiHandler:
 
     def get(self, api_request):
         print(api_request)
-
-        operation =  api_request['path']
+        # TODO Not sure if bullshit or handled right, see https://github.com/fadushin/esp8266/tree/master/micropython/uhttpd  Api Handlers... Inputs
+        operation =  api_request['prefix']
         if 'left_eye' == operation:
             self.modules['left_eye'].blink()
-        if right_eye:
+        elif 'right_eye' == operation:
             self.modules['right_eye'].blink()
-        if color_loop:
-            value = False/True  # TODO
+        elif 'strobo' == operation:
+            self.modules['gills'].strobo()
+        elif 'color_loop'  == operation:
+            value = bool(api_request['query_params']['value'])
             self.modules['left_eye'].color_loop = value
             self.modules['right_eye'].color_loop = value
-        if color:
-            # TODO get HTML inputs!!
-
+        elif 'color'  == operation:
+            html_color = api_request['query_params']['value']
             value = tuple(int(html_color[i:i+2], 16) for i in (1, 3, 5))
             self.modules['left_eye'].color = value
             self.modules['right_eye'].color = value
             self.modules['left_eye'].all_pixels()
             self.modules['right_eye'].all_pixels()
-            
-
-        if gill_control:
-            if value < 0:
-                self.modules.gills.set('normal')
+        elif 'gill_control'  == operation:
+            value = api_request['query_params']['value']
+            if value == -1:
+                self.modules['gills'].set('normal')
             else:
-                self.modules.gills.set(value)
+                self.modules['gills'].set(value)
 
-        if operation == "":
-            return index()
+        else: #operation == "":
+            return self.index()
 
 def init_modules():
     left_eye = Eye(list(range(12)), (100, 0, 0))
@@ -298,7 +315,7 @@ async def main(modules):
 
 if __name__ == "__main__":
     modules = init_modules()
-    api_handler = http_api_handler.Handler([(['left_eye', 'right_eye', 'color_loop', 'color', 'gill_control'], ApiHandler(modules))])
+    api_handler = http_api_handler.Handler([(['left_eye', 'right_eye', 'strobo','color_loop', 'color', 'gill_control'], ApiHandler(modules))])
     loop = asyncio.get_event_loop()
     loop.create_task(main(modules))
     server = uhttpd.Server([('/api', api_handler)])
