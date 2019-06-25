@@ -205,8 +205,10 @@ class ApiHandler:
             document.getElementById("result").innerHTML = "done";
             }
         };
-        if()
-        xhttp.open("GET", path + "?value=" + val, true);
+        if(val) {
+        path = path + "?value=" + val;
+        }
+        xhttp.open("GET", path, true);
         xhttp.send();
         }
         var cp = document.getElementById('color');
@@ -230,7 +232,7 @@ class ApiHandler:
             self.modules['left_eye'].color_loop = value
             self.modules['right_eye'].color_loop = value
         if color:
-            value = (0, 50, 100)  # TODO
+            # TODO parse value !! (hex string to (1, 2, 3))
             self.modules['left_eye'].color = value
             self.modules['right_eye'].color = value
             self.modules['left_eye'].all_pixels()
