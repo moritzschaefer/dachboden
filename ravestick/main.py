@@ -223,7 +223,9 @@ class ApiHandler:
 
     def get(self, api_request):
         print(api_request)
-        if left_eye:
+
+        operation =  api_request['path']
+        if 'left_eye' == operation:
             self.modules['left_eye'].blink()
         if right_eye:
             self.modules['right_eye'].blink()
@@ -237,6 +239,7 @@ class ApiHandler:
             self.modules['right_eye'].color = value
             self.modules['left_eye'].all_pixels()
             self.modules['right_eye'].all_pixels()
+            
 
         if gill_control:
             if value < 0:
@@ -244,7 +247,8 @@ class ApiHandler:
             else:
                 self.modules.gills.set(value)
 
-        return {'foo': 'bar'}
+        if operation == "":
+            return index()
 
 def init_modules():
     left_eye = Eye(list(range(12)), (100, 0, 0))
