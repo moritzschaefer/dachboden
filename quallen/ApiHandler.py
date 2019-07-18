@@ -84,5 +84,7 @@ class ApiHandler:
             else:
                 self.modules['gills'].setmode('color', value)
         """
+        if operation == "strobo":
+            self.modules['qualle'].setmode('strobo')
         elif operation == 'index':
             return self.index()
