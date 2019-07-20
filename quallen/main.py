@@ -148,9 +148,13 @@ async def udp_receiver(modules):
                 print("BLINK")
                 id = int(data[6:8])
                 blink_tick = ticks_ms()
-                for module in modules.values():
-                    module.blink()
+                if(id == 0):
+                    for module in modules.values():
+                        module.blink()
+                elif(str(id) in modules.keys()):
+                    module[str(id)].blink()
                 np.write()
+
             elif data.startswith(b'set max_brightness'):
                 brightness = int(data[19:22])
                 print(str(brightness))
@@ -193,9 +197,9 @@ async def main(modules):
 if __name__ == "__main__":
     modules = init_modules()
     #main(modules)
-    api_handler = http_api_handler.Handler([([''], ApiHandler(modules))])
+    #api_handler = http_api_handler.Handler([([''], ApiHandler(modules))])
     loop = asyncio.get_event_loop()
     loop.create_task(main(modules))
     loop.create_task(udp_receiver(modules))
-    server = uhttpd.Server([('/api', api_handler)])
-    server.run()
+    #server = uhttpd.Server([('/api', api_handler)])
+    #server.run()
