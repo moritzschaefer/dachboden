@@ -19,6 +19,8 @@ import pyaudio
 
 screen = None
 network = None
+quallen = None
+server = None
 
 mode_ctime = None
 mode_prev = None
@@ -26,15 +28,19 @@ strobo_duration = 3
 mode = "DEFAULT"
 mode_prev = "DEFAULT"
 
-#  quallen = [1, 2, 3, 4, 5, 6, 7, 8, 9. 10, 11, 12, 13, 14, 15]
-#  quallen_index = 0
+class Quallen(object):
+    def __init__(self):
+        self.quallen = [1, 2, 3]
+        self.quallen_index = 0
 
-#  def get_next_qualle():
-    #  qualle = quallen[index]
-    #  quallen_index + 1 % len(quallen)
-    #  return qualle
+    def get_next_qualle(self):
+        global screen
+        qualle = self.quallen[self.quallen_index]
+        self.quallen_index = (self.quallen_index + 1) % len(self.quallen)
+        #  screen.log('beat single on qualle ' + str(qualle))
+        return qualle
 
-USE_JACK = False
+USE_JACK = True
 
 class Color(object):
     red = None
@@ -77,8 +83,8 @@ class BeatDetection(threading.Thread):
 
         self.win_s = 2048               # fft size
         self.hop_s = 512
-        self.samplerate = 44100
-        #  self.samplerate = 48000
+        #  self.samplerate = 44100
+        self.samplerate = 48000
         self.tempo = aubio.tempo("default", self.win_s, self.hop_s, self.samplerate)
         self.click = 0.7 * np.sin(2. * np.pi * np.arange(self.hop_s) / self.hop_s * self.samplerate / 3000.)
 
@@ -111,7 +117,7 @@ class BeatDetection(threading.Thread):
         self.stream.start_stream()
 
     def pyaudio_callback(self, _in_data, _frame_count, _time_info, _status):
-        global screen, network, mode
+        global screen, network, mode, quallen, server
         #  samples, read = a_source()
         read = self.hop_s
         #  samples = np.fromstring(_in_data, dtype=np.float32)
@@ -119,8 +125,19 @@ class BeatDetection(threading.Thread):
 
         is_beat = self.tempo(samples)
         if is_beat:
-            if (mode == "BEAT SINGLE" or mode == "BEAT ALL"):
+            if (mode == "BEAT SINGLE"):
+                try:
+                    qualle = quallen.get_next_qualle()
+
+                    qualle_idx = str.encode(str(qualle))
+                    network.send_mcast(b'flash ' + qualle_idx)
+                    server.send_to_all(b'flash ' + qualle_idx)
+                except Exception as e:
+                    screen.log(e)
+
+            elif mode == "BEAT ALL":
                 network.send_mcast(b'flash 0')
+                server.send_to_all(b'flash 0')
             samples += self.click
 
             screen.setline_noblock(1, "cpu load:  " + '{:4.2f}'.format(self.stream.get_cpu_load())
@@ -157,7 +174,7 @@ class CursesThread(threading.Thread):
         self.curseslock = curseslock
 
     def run(self):
-        global screen, mode, mode_ctime, mode_prev
+        global screen, mode, mode_ctime, mode_prev, server
 
         while True:
             c = screen.stdscr.getch()
@@ -186,6 +203,14 @@ class CursesThread(threading.Thread):
                 mode_prev = mode
                 mode = "STROBO"
                 network.send_mcast(b'strobo 0')
+                server.send_to_all(b'strobo 0')
+            elif c == ord('l'):
+                server.list_clients()
+            elif c == ord('p'):
+                kill_index = screen.show_editbox('kill main() on client')
+                kill_client_main(kill_index)
+            elif c == ord('r'):
+                screen.refresh()
 
 MODEWIN_LINES = 4
 MAINWIN_LINES = 10
@@ -309,7 +334,7 @@ class Screen():
             self.helpwin.resize(HELPWIN_LINES, self.x)
             self.helpwin.mvwin(self.y - HELPWIN_LINES, 0)
             try:
-                self.helpwin.addstr(0, 0, 's - set strobo_duration, b - set max_brightness, r - refresh screen, Ctrl-C - quit')
+                self.helpwin.addstr(0, 0, 's - set strobo_duration, b - set max_brightness, r - refresh screen, l - list clients, Ctrl-C - quit')
             except Exception:
                 pass
             self.helpwin.noutrefresh()
@@ -357,7 +382,7 @@ class Screen():
             #  self.logwin.erase()
 
             count = 1
-            for i in self.logbuffer[-8:]:
+            for i in self.logbuffer[-20:]:
                 try:
                     self.logwin.addstr(count, 1, i)
                 except Exception:
@@ -370,7 +395,8 @@ class Screen():
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         self.logbuffer.append('%s: %s' %(now, msg))
-        self.update_log()
+        #  self.update_log()
+        self.refresh()
 
 
 MCAST_TTL = 2
@@ -388,12 +414,84 @@ class Network():
     def send_mcast(self, msg):
         self.sock.sendto(msg, (MCAST_GROUP, MCAST_PORT))
 
+HOST = "0.0.0.0"
+PORT = 7654
+
+class Server(threading.Thread):
+    def __init__(self):
+        global screen
+        threading.Thread.__init__(self)
+        # create an INET, STREAMing socket
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # bind the socket to a public host, and a well-known port
+        self.sock.bind((HOST, PORT))
+        # become a server socket
+        self.sock.listen(5)
+        self.connections = []
+        screen.log("Listening on port " + str(PORT))
+
+    def run(self):
+        global screen
+        while True:
+            conn, addr = self.sock.accept()
+            self.connections.append((conn, addr));
+            screen.log("connection from " + str(conn) + " " + str(addr))
+
+            #  from_client = ''
+            #  while True:
+                #  data = conn.recv(4096)
+                #  if not data: break
+                #  from_client += data
+                #  print from_client
+                #  conn.send("I am SERVER\n")
+            #  conn.close()
+            #  print 'client disconnected'
+
+    def list_clients(self):
+        global screen
+        count = 0
+        for entry in self.connections:
+            conn, addr = entry
+            screen.log(str(count) + ": " + str(addr))
+            count += 1
+
+    def send_to_one(self, index, message):
+        global screen
+        entry = None
+        try:
+            entry = self.connections[int(index)]
+        except Exception as e:
+            screen.log(str(e))
+            screen.log("Client does not exist")
+
+        if entry:
+            conn, addr = entry
+            try:
+                conn.send(message + b'\n')
+                #  screen.log("sent to " + str(conn) + " " + str(addr))
+            except Exception as e:
+                screen.log(str(e))
+                screen.log("removing " + str(conn) + " " + str(addr))
+                self.connections.remove(entry)
+
+    def send_to_all(self, message):
+        global screen
+        for entry in list(self.connections):
+            conn, addr = entry
+            try:
+                conn.sendall(message + b'\n')
+                #  screen.log("sent to " + str(conn) + " " + str(addr))
+            except Exception as e:
+                screen.log(str(e))
+                screen.log("removing " + str(conn) + " " + str(addr))
+                self.connections.remove(entry)
+
 
 def main(stdscr):
-    global screen, network, mode, mode_prev, mode_ctime
+    global screen, network, mode, mode_prev, mode_ctime, quallen, server
 
     network = Network()
-
     curseslock = threading.Lock()
 
     curses.start_color()
@@ -421,9 +519,15 @@ def main(stdscr):
     curses_thread.daemon = True
     curses_thread.start()
 
+    server = Server()
+    server.daemon = True
+    server.start()
+
     beat = BeatDetection()
     beat.daemon = True
     beat.start()
+
+    quallen = Quallen()
 
     # main loop
     while True:
@@ -447,9 +551,15 @@ def set_max_brightness(_brightness):
         return False
 
     network.send_mcast(b'set max_brightness ' + b'%d' % (brightness))
+    server.send_to_all(b'set max_brightness ' + b'%d' % (brightness))
 
     screen.log('set max_brightness to %d' %(brightness))
     screen.setline(4, "max_brightness: %d" %(brightness) , Color.green)
+
+def kill_client_main(index):
+    server.send_to_one(index, b'kill')
+    screen.log('sent kill to client')
+
 
 def set_strobo_duration(_duration):
     global strobo_duration
@@ -465,6 +575,7 @@ def set_strobo_duration(_duration):
 
     strobo_duration = duration
     network.send_mcast(b'set strobo_duration ' + b'%d' % (duration))
+    server.send_to_all(b'set strobo_duration ' + b'%d' % (duration))
 
     screen.log('set strobo_duration to %d' %(strobo_duration))
     screen.setline(5, "strobo_duration: %d" %(strobo_duration) , Color.green)
