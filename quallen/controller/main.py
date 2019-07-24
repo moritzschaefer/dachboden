@@ -1,47 +1,42 @@
-import math
 import machine
 import neopixel
 from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
-#  import http_api_handler
-#  import uhttpd
-import uasyncio as asyncio
-#  from ApiHandler import ApiHandler
-from math import sin
-#Auge1 0-11 Auge2 12-23 Kiemen1 24-x Kiemen2 x+1-y Inner y+1-max
-
+#  import uasyncio as asyncio
+from micropython import const
+import usocket
 import socket
 import uselect
 import network
 import sys
+#  import webrepl
 
-MCAST_PORT = 8765
-MCAST_GROUP = '224.1.1.1'
-
-
-PIXEL_COUNT = 60
+PIXEL_COUNT = const(60)
 np = neopixel.NeoPixel(machine.Pin(5), PIXEL_COUNT)
-STROBE_INTERVAL = 40
-STROBE_TOTAL = 5000
-PULSE_DURATION = 100
-MAX_PULSE_LIGHT = 150 
-CHANGE = False
+STROBE_INTERVAL = const(40)
+STROBE_TOTAL = const(5000)
+PULSE_DURATION = const(100)
+MAX_PULSE_LIGHT = const(150)
+#  CHANGE = False
+SERVER = "192.168.0.101"
 
 class Module(object):
-    def __init__(self, pixels, color=None, intensity=1.0):
+    def __init__(self, pixels, color=None, intensity=0.2):
         self.pixels = pixels
         self.color = color
         self.intensity = intensity
         self.mode = None
+        self.change = False
 
     def all_pixels(self, onoff=True, color=None):
-        global CHANGE
+        #  global CHANGE
         if onoff:
             color = self._color_intensity(color)
         else:
             color = (0, 0, 0)
         for pixel in self.pixels:
             np[pixel] = color
-        CHANGE = True
+        #  CHANGE = True
+        self.change = True
 
     def _color_intensity(self, color=None):
         if color is None:
@@ -63,13 +58,15 @@ class Qualle(Module):
         self.strobo_start = ticks_ms()
         self.last_mode = "pulse"
         self.blink_tick = ticks_ms()
+        self.ticks_diff_cached = ticks_diff
 
     def step(self, ticks):
-        if abs(ticks_diff(self.blink_tick, ticks)) < 200:
+        #  print("step")
+        if abs(self.ticks_diff_cached(self.blink_tick, ticks)) < 200:
             return
 
         if self.mode == "pulse":
-            if abs(ticks_diff(self.last_tick, ticks)) < PULSE_DURATION:
+            if abs(self.ticks_diff_cached(self.last_tick, ticks)) < PULSE_DURATION:
                 return
             self.last_tick = ticks
             if self.pulse_rise:
@@ -86,10 +83,10 @@ class Qualle(Module):
             self.all_pixels()
 
         elif self.mode == "strobo":
-            if abs(ticks_diff(self.strobo_start, ticks)) > self.strobo_length:
+            if abs(self.ticks_diff_cached(self.strobo_start, ticks)) > self.strobo_length:
                 self.mode = self.last_mode
 
-            elif abs(ticks_diff(self.last_tick, ticks)) > STROBE_INTERVAL:
+            elif abs(self.ticks_diff_cached(self.last_tick, ticks)) > STROBE_INTERVAL:
                 #  print(self.strobo_on)
                 if self.strobo_on:
                     self.strobo_on = not self.strobo_on
@@ -118,246 +115,134 @@ class Qualle(Module):
             self.strobo_start = ticks_ms()
 
 def init_modules():
-    qualle1 =Qualle(list(range(20)), (0, 0, MAX_PULSE_LIGHT))
+    qualle1 = Qualle(list(range(20)), (0, 0, MAX_PULSE_LIGHT))
     qualle2 = Qualle(list(range(20,40)), (0, 0, MAX_PULSE_LIGHT))
     qualle3 = Qualle(list(range(40,60)), (0, 0, MAX_PULSE_LIGHT))
 
     return {'1': qualle1, '2': qualle2, '3': qualle3}
 
+class Receiver(object):
+    def __init__(self, modules):
+        self.poller = uselect.poll()
+        self.sock = None
+        self.is_connected = False
+        self.np_write_cached = np.write
+        self.modules = modules
 
-SERVER = "192.168.0.101"
+    def connect_to_server(self):
+        if not self.is_connected:
+            # close old socket
+            if self.sock is not None:
+                print("closing existing socket")
+                self.poller.unregister(self.sock)
+                self.sock.close()
 
-async def tcp_receiver(modules):
-    sta_if = network.WLAN(network.STA_IF)
-    ap_if = network.WLAN(network.AP_IF)
-    if not sta_if.isconnected():
-        print('connecting to network...')
-        sta_if.active(True)
-        #sta_if.connect('Incubator', 'Fl4mongo')
-        sta_if.connect('Fischnetz', 'incubator')
-        while not sta_if.isconnected():
-            await asyncio.sleep_ms(10)
-    ap_if.active(False)
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                print("trying to connect to server")
+                self.sock.connect((SERVER, 7654))
+                self.is_connected = True
+                print("successfully connected to server")
+            except Exception as e:
+                print(str(e))
+            if self.is_connected:
+                self.poller.register(self.sock, uselect.POLLIN)
 
-    print('network config sta_if:', sta_if.active())
-    print('network config ap_if:', ap_if.active())
-    print('network config:', sta_if.ifconfig())
+    def receive(self, ticks):
+        data = b''
 
-    poller = uselect.poll()
-    sock = None
-
-    is_connected = False
-    while not is_connected:
-        try:
-            print("trying to connect to server")
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((SERVER, 7654))
-            is_connected = True
-        except Exception as e:
-            print(str(e))
-        await asyncio.sleep_ms(1000)
-    poller.register(sock, uselect.POLLIN)
-
-    while True:
-        ret = poller.poll(0)
-
+        # poll non-blocking
+        ret = self.poller.poll(0)
         if not ret:
-            await asyncio.sleep_ms(1)
-            continue
-
-        #  print(str(ret))
+            return
 
         obj, event = ret[0]
-        #  print(str(obj))
-        #  print(str(event))
         if event == uselect.POLLHUP:
             print("POLLHUP")
-            print(uselect.POLLHUP)
+            return
         elif event == uselect.POLLERR:
             print("POLLERR")
-            print(uselect.POLLERR)
-        else:
-            s = obj
-            data = s.readline()
-            print(str(data))
+            return
 
-            if len(data) == 0:
-                poller.unregister(s)
-                is_connected = False
-                while not is_connected:
-                    try:
-                        print("trying to connect to server")
-                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        sock.connect((SERVER, 7654))
-                        is_connected = True
-                    except Exception as e:
-                        print(str(e))
-                    await asyncio.sleep_ms(1000)
-                poller.register(sock, uselect.POLLIN)
+        s = obj
+        data = s.readline()
+        print("Received at " + str(ticks) + ": " + str(data))
 
-            if data.startswith(b'flash'):
-                #  print("BLINK")
-                try:
-                    id = int(data[6:8])
-                    if(id == 0):
-                        for module in modules.values():
-                            module.blink()
-                    elif(str(id) in modules.keys()):
-                        modules[str(id)].blink()
-                    np.write()
-                except Exception as e:
-                    print(e)
+        # re-connect socket on connection loss
+        if len(data) == 0: # This means the socket is dead
+            print("Lost Connection")
+            self.is_connected = False
+            return
 
-                #  blink_tick = ticks_ms()
-
-            elif data.startswith(b'set max_brightness'):
-                brightness = int(data[19:22])
-                print(str(brightness))
-                print("set max_brightness")
-                intensity = brightness / 255.0
-                for module in modules.values():
-                    module.intensity = intensity
-
-            elif data.startswith(b'kill'):
-                sys.exit(0)
-
-            elif data.startswith(b'set strobo_duration'):
-                duration = int(data[20:23])
-                print("Strobo duration set to", str(duration))
-                for module in modules.values():
-                    module.strobo_length = duration*1000
-
-            elif data.startswith(b'strobo'):
-                print("Strobo")
-                for module in modules.values():
-                    module.set_mode("strobo")
-
-        await asyncio.sleep_ms(1)
-    sock.close()
-
-async def udp_receiver(modules):
-    global intensity
-
-    sta_if = network.WLAN(network.STA_IF)
-    ap_if = network.WLAN(network.AP_IF)
-    if not sta_if.isconnected():
-        print('connecting to network...')
-        sta_if.active(True)
-        #sta_if.connect('Incubator', 'Fl4mongo')
-        sta_if.connect('Fischnetz', 'incubator')
-        while not sta_if.isconnected():
-            await asyncio.sleep_ms(10)
-    ap_if.active(False)
-
-    print('network config sta_if:', sta_if.active())
-    print('network config ap_if:', ap_if.active())
-    print('network config:', sta_if.ifconfig())
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.setblocking(False)
-    addr = socket.getaddrinfo("0.0.0.0", MCAST_PORT)[0][-1]
-    sock.bind(addr)
-    opt = bytes([224, 1, 1, 1]) + bytes([0, 0, 0, 0])
-    sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, opt)
-
-    poller = uselect.poll()
-    poller.register(sock, uselect.POLLIN)
-
-    while True:
-        res = poller.poll(-1)  # time in milliseconds
-        if not res is None:
-            print(str(res))
-            s = res[0][0]
-            (data, _address) = s.recvfrom(1024)
-            print(str(data))
-            if data.startswith(b'flash'):
-                print("BLINK")
+        # handle received packet
+        if data.startswith(b'flash'):
+            #  print("BLINK")
+            try:
                 id = int(data[6:8])
                 if(id == 0):
-                    for module in modules.values():
+                    for module in self.modules.values():
                         module.blink()
-                elif(str(id) in modules.keys()):
-                    modules[str(id)].blink()
-                np.write()
-
-            elif data.startswith(b'set max_brightness'):
-                brightness = int(data[19:22])
-                print(str(brightness))
-                print("set max_brightness")
-                intensity = brightness / 255.0
-                for module in modules.values():
-                    module.intensity = intensity
-            elif data.startswith(b'set strobo_duration'):
-                duration = int(data[20:23])
-                print("Strobo duration set to", str(duration))
-                for module in modules.values():
-                    module.strobo_length = duration*1000
-            elif data.startswith(b'strobo'):
-                print("Strobo")
-                for module in modules.values():
-                    module.set_mode("strobo")
-        await asyncio.sleep_ms(1)
-        #  try:
-            #  (data, _address) = sock.recvfrom(1024)
-            #  print(str(data))
-            #  if data.startswith(b'flash'):
-                #  print("BLINK")
-                #  id = int(data[6:8])
-                #  blink_tick = ticks_ms()
-                #  if(id == 0):
-                    #  for module in modules.values():
-                        #  module.blink()
                 #  elif(str(id) in modules.keys()):
-                    #  modules[str(id)].blink()
+                elif(self.modules.get(str(id), False)):
+                    self.modules[str(id)].blink()
                 #  np.write()
+                self.np_write_cached()
+            except Exception as e:
+                print(e)
 
-            #  elif data.startswith(b'set max_brightness'):
-                #  brightness = int(data[19:22])
-                #  print(str(brightness))
-                #  print("set max_brightness")
-                #  intensity = brightness / 255.0
-                #  for module in modules.values():
-                    #  module.intensity = intensity
-            #  elif data.startswith(b'set strobo_duration'):
-                #  duration = int(data[20:23])
-                #  print("Strobo duration set to", str(duration))
-                #  for module in modules.values():
-                    #  module.strobo_length = duration*1000
-            #  elif data.startswith(b'strobo'):
-                #  print("Strobo")
-                #  for module in modules.values():
-                    #  module.set_mode("strobo")
-        #  except OSError:
-            #  pass
-        #  await asyncio.sleep_ms(1)
+        elif data.startswith(b'set max_brightness'):
+            brightness = int(data[19:22])
+            print(str(brightness))
+            print("set max_brightness")
+            intensity = brightness / 255.0
+            for module in self.modules.values():
+                module.intensity = intensity
 
+        elif data.startswith(b'kill'):
+            sys.exit(0)
 
+        elif data.startswith(b'set strobo_duration'):
+            duration = int(data[20:23])
+            print("Strobo duration set to", str(duration))
+            for module in self.modules.values():
+                module.strobo_length = duration*1000
 
-async def real_main(modules):
-    global CHANGE
-    while True:
-        ticks = ticks_ms()
-
-        for module in modules.values():
-            module.step(ticks)
-
-        if CHANGE:
-            np.write()
-            CHANGE = False
-        #sleep_ms(20)
-        await asyncio.sleep_ms(1)
+        elif data.startswith(b'strobo'):
+            #  print("Strobo")
+            for module in self.modules.values():
+                module.set_mode("strobo")
 
 def main():
     modules = init_modules()
-    #main(modules)
-    #api_handler = http_api_handler.Handler([([''], ApiHandler(modules))])
-    loop = asyncio.get_event_loop()
-    loop.create_task(real_main(modules))
-    loop.create_task(tcp_receiver(modules))
-    loop.run_forever()
-    #server = uhttpd.Server([('/api', api_handler)])
-    #server.run()
+
+    ticks_ms_cached = ticks_ms
+    np_write_cached = np.write
+    change = False
+
+    receiver = Receiver(modules)
+
+    print("STARTING MAIN LOOP")
+
+    while True:
+        ticks = ticks_ms_cached()
+
+        receiver.connect_to_server()
+        receiver.receive(ticks)
+
+        #  ticks = ticks_ms()
+
+        for module in modules.values():
+            module.step(ticks)
+            if module.change:
+                change = True
+                module.change = False
+
+        if change:
+            #  np.write()
+            #  print("write")
+            np_write_cached()
+        sleep_ms(1)
+        #  await asyncio.sleep_ms(1)
 
 if __name__ == "__main__":
     main()

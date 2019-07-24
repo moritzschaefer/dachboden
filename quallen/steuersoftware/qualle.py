@@ -18,13 +18,12 @@ import numpy as np
 import pyaudio
 
 screen = None
-network = None
 quallen = None
 server = None
 
 mode_ctime = None
 mode_prev = None
-strobo_duration = 3
+strobo_duration = 1
 mode = "DEFAULT"
 mode_prev = "DEFAULT"
 
@@ -117,7 +116,7 @@ class BeatDetection(threading.Thread):
         self.stream.start_stream()
 
     def pyaudio_callback(self, _in_data, _frame_count, _time_info, _status):
-        global screen, network, mode, quallen, server
+        global screen, mode, quallen, server
         #  samples, read = a_source()
         read = self.hop_s
         #  samples = np.fromstring(_in_data, dtype=np.float32)
@@ -130,13 +129,11 @@ class BeatDetection(threading.Thread):
                     qualle = quallen.get_next_qualle()
 
                     qualle_idx = str.encode(str(qualle))
-                    network.send_mcast(b'flash ' + qualle_idx)
                     server.send_to_all(b'flash ' + qualle_idx)
                 except Exception as e:
                     screen.log(e)
 
             elif mode == "BEAT ALL":
-                network.send_mcast(b'flash 0')
                 server.send_to_all(b'flash 0')
             samples += self.click
 
@@ -198,12 +195,14 @@ class CursesThread(threading.Thread):
                 screen.setmode("BEAT ALL", Color.green)
                 mode = "BEAT ALL"
             elif c == ord('4'):
-                screen.setmode("STROBO", Color.green + curses.A_BLINK)
-                mode_ctime = datetime.now()
-                mode_prev = mode
-                mode = "STROBO"
-                network.send_mcast(b'strobo 0')
-                server.send_to_all(b'strobo 0')
+                if mode == "STROBO":
+                    pass
+                else:
+                    screen.setmode("STROBO", Color.green + curses.A_BLINK)
+                    mode_ctime = datetime.now()
+                    mode_prev = mode
+                    mode = "STROBO"
+                    server.send_to_all(b'strobo 0')
             elif c == ord('l'):
                 server.list_clients()
             elif c == ord('p'):
@@ -398,22 +397,6 @@ class Screen():
         #  self.update_log()
         self.refresh()
 
-
-MCAST_TTL = 2
-MCAST_GROUP = '224.1.1.1'
-MCAST_PORT = 8765
-
-class Network():
-    '''
-    Foo
-    '''
-    def __init__(self):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MCAST_TTL)
-
-    def send_mcast(self, msg):
-        self.sock.sendto(msg, (MCAST_GROUP, MCAST_PORT))
-
 HOST = "0.0.0.0"
 PORT = 7654
 
@@ -473,6 +456,7 @@ class Server(threading.Thread):
             except Exception as e:
                 screen.log(str(e))
                 screen.log("removing " + str(conn) + " " + str(addr))
+                conn.close()
                 self.connections.remove(entry)
 
     def send_to_all(self, message):
@@ -485,13 +469,13 @@ class Server(threading.Thread):
             except Exception as e:
                 screen.log(str(e))
                 screen.log("removing " + str(conn) + " " + str(addr))
+                conn.close()
                 self.connections.remove(entry)
 
 
 def main(stdscr):
-    global screen, network, mode, mode_prev, mode_ctime, quallen, server
+    global screen, mode, mode_prev, mode_ctime, quallen, server
 
-    network = Network()
     curseslock = threading.Lock()
 
     curses.start_color()
@@ -537,7 +521,7 @@ def main(stdscr):
             mode = mode_prev
             mode_prev = "STROBO"
         screen.resize()
-        time.sleep(1)
+        time.sleep(0.01)
 
 def set_max_brightness(_brightness):
     try:
@@ -550,7 +534,6 @@ def set_max_brightness(_brightness):
         screen.log('ERROR: brightness must be 0-255')
         return False
 
-    network.send_mcast(b'set max_brightness ' + b'%d' % (brightness))
     server.send_to_all(b'set max_brightness ' + b'%d' % (brightness))
 
     screen.log('set max_brightness to %d' %(brightness))
@@ -574,7 +557,6 @@ def set_strobo_duration(_duration):
         return False
 
     strobo_duration = duration
-    network.send_mcast(b'set strobo_duration ' + b'%d' % (duration))
     server.send_to_all(b'set strobo_duration ' + b'%d' % (duration))
 
     screen.log('set strobo_duration to %d' %(strobo_duration))
