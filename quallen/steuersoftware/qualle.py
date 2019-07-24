@@ -23,7 +23,7 @@ server = None
 
 mode_ctime = None
 mode_prev = None
-strobo_duration = 3
+strobo_duration = 1
 mode = "DEFAULT"
 mode_prev = "DEFAULT"
 
@@ -456,6 +456,7 @@ class Server(threading.Thread):
             except Exception as e:
                 screen.log(str(e))
                 screen.log("removing " + str(conn) + " " + str(addr))
+                conn.close()
                 self.connections.remove(entry)
 
     def send_to_all(self, message):
@@ -468,6 +469,7 @@ class Server(threading.Thread):
             except Exception as e:
                 screen.log(str(e))
                 screen.log("removing " + str(conn) + " " + str(addr))
+                conn.close()
                 self.connections.remove(entry)
 
 
@@ -519,7 +521,7 @@ def main(stdscr):
             mode = mode_prev
             mode_prev = "STROBO"
         screen.resize()
-        time.sleep(1)
+        time.sleep(0.01)
 
 def set_max_brightness(_brightness):
     try:
