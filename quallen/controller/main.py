@@ -96,6 +96,12 @@ class Qualle(Module):
                     self.all_pixels(onoff=False)
                 self.last_tick = ticks
 
+    #Ideas TODO:
+    #Rote streifen durch den quallen körper
+    #alle 5 min eine Qualle langsam Rot
+
+
+
     def blink(self):
         self.all_pixels(True, (255, 255, 0))
         self.blink_tick = ticks_ms()
