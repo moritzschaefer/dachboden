@@ -206,6 +206,9 @@ class Receiver(object):
             for module in self.modules.values():
                 module.set_mode("strobo")
 
+        elif data.startswith(b'ping'):
+            pass
+
 def main():
     modules = init_modules()
 

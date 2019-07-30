@@ -26,6 +26,7 @@ mode_prev = None
 strobo_duration = 1
 mode = "DEFAULT"
 mode_prev = "DEFAULT"
+ping_time = datetime.now()
 
 class Quallen(object):
     def __init__(self):
@@ -81,7 +82,8 @@ class BeatDetection(threading.Thread):
         threading.Thread.__init__(self)
 
         self.win_s = 2048               # fft size
-        self.hop_s = 512
+        #  self.hop_s = 512
+        self.hop_s = 512 
         #  self.samplerate = 44100
         self.samplerate = 48000
         self.tempo = aubio.tempo("default", self.win_s, self.hop_s, self.samplerate)
@@ -342,7 +344,7 @@ class Screen():
 
             self.update_mainwin()
             self.update_modewin()
-        self.update_log()
+            self.update_log()
 
     def update_modewin(self):
         self.modewin.erase()
@@ -377,7 +379,7 @@ class Screen():
         self.mainwin.refresh()
 
     def update_log(self):
-        with self.curseslock:
+        #  with self.curseslock:
             #  self.logwin.erase()
 
             count = 1
@@ -410,7 +412,7 @@ class Server(threading.Thread):
         # bind the socket to a public host, and a well-known port
         self.sock.bind((HOST, PORT))
         # become a server socket
-        self.sock.listen(5)
+        self.sock.listen(100)
         self.connections = []
         screen.log("Listening on port " + str(PORT))
 
@@ -419,7 +421,7 @@ class Server(threading.Thread):
         while True:
             conn, addr = self.sock.accept()
             self.connections.append((conn, addr));
-            screen.log("connection from " + str(conn) + " " + str(addr))
+            #  screen.log("connection from " + str(conn) + " " + str(addr))
 
             #  from_client = ''
             #  while True:
@@ -474,7 +476,7 @@ class Server(threading.Thread):
 
 
 def main(stdscr):
-    global screen, mode, mode_prev, mode_ctime, quallen, server
+    global screen, mode, mode_prev, mode_ctime, quallen, server, ping_time
 
     curseslock = threading.Lock()
 
@@ -522,6 +524,10 @@ def main(stdscr):
             mode_prev = "STROBO"
         screen.resize()
         time.sleep(0.01)
+
+        if mode == "DEFAULT" and ping_time + timedelta(seconds=1) < datetime.now():
+            server.send_to_all(b'ping')
+            ping_time = datetime.now()
 
 def set_max_brightness(_brightness):
     try:
