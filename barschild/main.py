@@ -1,4 +1,5 @@
 import machine, neopixel, time
+import utime #for strobo
 
 PIN = 2
 NUM_PIXEL = 19
@@ -7,6 +8,8 @@ INTENSITY = 40
 RED = (16, 0, 0)
 GREEN = (1, 8, 0)
 YELLOW = (15, 15, 0)
+WHITE = (50, 50, 50)
+BLACK = (0, 0, 0)
 
 np = neopixel.NeoPixel(machine.Pin(PIN), NUM_PIXEL)
 
@@ -77,9 +80,11 @@ def alles_leer():
         set_pixel(drink, RED)
 
 def main():
-    alles_da()
-    leer('mexikaner')
-    leer('j koffeinfrei')
+    alles_leer()
+    wieder_da('bier')
+    wieder_da('mate')
+    #leer('mexikaner')
+    #leer('j koffeinfrei')
 
 def info():
     print('functions:\n')
@@ -92,6 +97,29 @@ def info():
     print('Die drinks die angeboten werden: \n')
     for drink in drinks:
         print(drink)
+
+def strobo(color1=WHITE, color2=BLACK, times=200):
+    for i in range(times):
+        uniform_color(color1)
+        utime.sleep_ms(40)
+        uniform_color(color2)
+        utime.sleep_ms(80)
+
+def chase():
+    uniform_color(BLACK)
+    for i in range(10):
+        #left side
+        set_pixel(i+9,YELLOW)
+        #right side
+        set_pixel(8-i,YELLOW)
+        utime.sleep_ms(200)
+
+def chaseOld():
+    uniform_color(BLACK)
+    for i in range(NUM_PIXEL):
+        set_pixel(i,YELLOW)
+        #set_pixel(i-1,BLACK)
+        utime.sleep_ms(100)
 
 if __name__ == "__main__":
     main()
