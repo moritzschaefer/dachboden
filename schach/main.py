@@ -9,7 +9,7 @@ import utime
 #import uos
 import socket
 #import array
-#import Ambiente
+#import ambiente
 #import stroboscope
 #import startup
 
@@ -51,7 +51,7 @@ class Chess:
         print("One Startup finished")
 
         self.Counter = 0
-        #self.ambiente = Ambiente.Ambiente(self.sender)
+        #self.ambiente = ambiente.Ambiente(self.sender)
         #self.mode = "ambiente"
         self.mode = "live"
         self.time_progress = 0
