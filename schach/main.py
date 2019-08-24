@@ -1,13 +1,17 @@
+import http_api_handler
+import uhttpd
+import uasyncio as asyncio
 import machine
 import neopixel
-from math import sin
+#from math import sin
 import utime
-import uos
+#import uos
 import socket
-import array
-import Ambiente
-import stroboscope
-import startup
+#import array
+#import Ambiente
+#import stroboscope
+#import startup
+
 # Channels: 151
 
 # 0 mode
@@ -42,12 +46,13 @@ class Chess:
         #utime.sleep_ms(15000)
 
         #stroboscope.stroboscope(self.sender, self.board)
-        startup.startoup(self.sender, self.player_pixel, self.player_colors)
+        #startup.startup(self.sender, self.player_pixel, self.player_colors)
         print("One Startup finished")
 
         self.Counter = 0
-        self.ambiente = Ambiente.Ambiente(self.sender)
-        self.mode = "ambiente"
+        #self.ambiente = Ambiente.Ambiente(self.sender)
+        #self.mode = "ambiente"
+        self.mode = "live"
         self.time_progress = 0
 
         self.player_time = 60*1000*5
@@ -57,9 +62,6 @@ class Chess:
     def get_lights(self):
         return self.board
 
-    def process_input_data(self, data):
-        #TODO Do something with recieved signals
-        print(data)
 
     def set_turn(self, player):
         if player == "white":
@@ -89,16 +91,19 @@ class Chess:
         self.player_colors[player] = color
 
     def step(self):
-        time_diff = utime.ticks_diff(utime.ticks_ms(),self.time)
+        time_diff = abs(utime.ticks_diff(utime.ticks_ms(), self.time))
         if self.mode == "ambiente":
             self.ambiente.ambiente_step()
         elif self.mode == "live":
             if time_diff > self.game_time[self.player]:
                 self.time_out(player = self.player)
+            elif  (self.game_time[self.player] * self.time_progress / PIXELS)  >  time_diff :
+                    self.time_progress += 1
+                    for i in range(self.time_progress):
+                        self.board[i] = (10, 10, 10)
+                    self.sender.send(self.board)
             else:
                 pass
-            #elif  self.game_time[self.player] - time_diff > self.time_progress * self.game_time[self.player]:
-            #TODO Let the led loose progress
 
         else:
             self.arcade_mode_step(time_diff)
@@ -151,48 +156,14 @@ class Sender():
             self.neop[i] = pixel_values[i]
         self.neop.write()
 
-class Receiver():
-    def __enter__(self):
-        return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.sock.close()
 
-    def __init__(self,buffer_size=64):
-        self.buffer_size = buffer_size
+async def main(chess):
+    #chess = Chess()
+    while True:
+        chess.step()
 
-        #Bind the socket to the port
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-        server_address = ('0.0.0.0', 9000)
-        self.sock.bind(server_address)
-        self.sock.settimeout(0.1)
-
-    def receive(self):
-        try:
-            data, _ = self.sock.recvfrom(self.buffer_size)
-
-        except OSError:  # timeout!!
-            return None
-        except Exception as e:
-            print(e)
-            return None
-        else:
-            return data
-
-def ambiente_light(self):
-    pass
-
-def main():
-    chess = Chess()
-    with Receiver() as recv:
-        while True:
-            """
-            data = recv.receive()
-            if data is not None:
-                chess.process_input_data(data)
-            """
-            chess.step()
+        await asyncio.sleep_ms(10)
 
 
 
@@ -201,68 +172,89 @@ class ApiHandler:
         self.chess = chess
 
     def index(self):
-        return "" # TODO add HTML
+        return '''<html>
+            <head>
+                <title>ChessControl</title>
+            </head>
+            <body>
+                <button onclick="call('player_white')">Spieler 1</button>
+                <button onclick="call('player_black')">Spieler 2</button>
+                <button onclick="call('restart')">Restart</button>
+                <p id="result">Press a button</p>
+                <input type="color" id="set_white_color"/>
+                <input type="color" id="set_black_color"/>
+                <script type="text/javascript">
+                 var range = document.getElementById("range");
+                 range.addEventListener("change", function(event) {
+                 if(document.getElementById("music").value)
+                     call('gill_control', event.target.value);
+                 }, false);
+                 function handleClick(cb) {
+                 call('color_loop', cb.checked ? 1 : 0);
+                 }
+                 function call(operation, val) {
+                 var xhttp = new XMLHttpRequest();
+                 document.getElementById("result").innerHTML = "calling";
+                 xhttp.onreadystatechange = function() {
+                     if (this.readyState == 4 && this.status == 200) {
+                     document.getElementById("result").innerHTML = "done";
+                     }
+                 };
+                 var path = "/api?operation=" + operation;
+                 if(val) {
+                  path += "&value=" + val;
+                 }
+                 xhttp.open("GET", path, true);
+                 xhttp.send();
+                 }
+                 var cp = document.getElementById('color_white');
+                 var cp = document.getElementById('color_black');
+                 cp.addEventListener("change", function(event) {
+                 call('color', event.target.value.substr(1));
+                 }, false);
+                </script>
+            </body>
+             </html>
+            '''
 
     def get(self, api_request):
         print(api_request)
-        # TODO Not sure if bullshit or handled right, see https://github.com/fadushin/esp8266/tree/master/micropython/uhttpd  Api Handlers... Inputs
         operation =  api_request['query_params'].get('operation', 'index')
-        if 'white_player_done' == operation:
+        if 'player_white' == operation:
+            print("Blacks turn now")
             self.chess.set_turn("black")
-        elif 'black_player_done' == operation:
+
+        elif 'player_black' == operation:
+            print("Whites turn now")
             self.chess.set_turn("white")
         elif 'restart' == operation:
+            print("Restart Game")
             self.chess.restart()
         elif 'set_time'  == operation:
             value = int(api_request['query_params']['value'])
+            print("Set time to ", value)
             self.chess.set_player_time(value)
-        elif 'set_white_color':
+        elif 'set_white_color' == operation:
             html_color = api_request['query_params']['value']
             value = tuple(int(html_color[i:i+2], 16) for i in (0, 2, 4))
+            print("Set white color to ", value)
             self.chess.set_color(player=0, color=value)
-        elif 'set_black_color':
+        elif 'set_black_color' == operation:
             html_color = api_request['query_params']['value']
             value = tuple(int(html_color[i:i+2], 16) for i in (0, 2, 4))
+            print("Set black color to ", value)
             self.chess.set_color(player=1, color=value)
         elif operation == 'index':
             return self.index()
 
 
 if __name__ == "__main__":
-    main()
-    api_handler = http_api_handler.Handler([([''], ApiHandler(modules))])
+    chess = Chess()
+    api_handler = http_api_handler.Handler([([''], ApiHandler(chess))])
     loop = asyncio.get_event_loop()
-    loop.create_task(main(modules))
+    loop.create_task(main(chess))
     server = uhttpd.Server([('/api', api_handler)])
     server.run()
 
 
 
-#TODO
-#Move async to esp
-#async http soket.
-#IP websocket 192.168.178.4
-# Website:
-
-#  Two time fields as buttons
-#  Send two signals
-#  TODO learn how to display live changing time
-
-
-
-# Modules:
-"""
-DMX Strobo Access (not interupting the time)
-
-Intern Network:
-Time is running down /Different color 
-
-Settings: (Color for each player, Time per match, increment, delay )  
-Each player is slowling losing color for each turn. You see the delay/increment first cycle and then the overall time starts per turn and goes in the right speed. 5 sec left, very fast, 5 min left very slowe
- 
-
-"""
-
-
-#Sonstiges
-#Milchglas
