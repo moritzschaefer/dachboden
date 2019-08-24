@@ -1,7 +1,4 @@
-#TODO
-Move async to esp
-async http soket.
-IP websocket 192.168.178.4
+
 # Website:
 
   Two time fields as buttons
@@ -21,7 +18,9 @@ Each player is slowling losing color for each turn. You see the delay/increment 
 
 
 
+# TODO
+Move async to esp
 
+async http soket.
 
-#Sonstiges
 Milchglas
