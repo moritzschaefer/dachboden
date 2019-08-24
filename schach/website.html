@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>MantaControl</title>
+    </head>
+    <body>
+        <button onclick="call('player_white')">Spieler 1</button>
+        <button onclick="call('player_black')">Spieler 2</button>
+        <button onclick="call('restart')">Restart</button>
+        <p id="result">Press a button</p>
+        <input type="color" id="color_white"/>
+        <input type="color" id="color_black"/>
+        <script type="text/javascript">
+         var range = document.getElementById("range");
+         range.addEventListener("change", function(event) {
+         if(document.getElementById("music").value)
+             call('gill_control', event.target.value);
+         }, false);
+         function handleClick(cb) {
+         call('color_loop', cb.checked ? 1 : 0);
+         }
+         function call(operation, val) {
+         var xhttp = new XMLHttpRequest();
+         document.getElementById("result").innerHTML = "calling";
+         xhttp.onreadystatechange = function() {
+             if (this.readyState == 4 && this.status == 200) {
+             document.getElementById("result").innerHTML = "done";
+             }
+         };
+         var path = "/api?operation=" + operation;
+         if(val) {
+          path += "&value=" + val;
+         }
+         xhttp.open("GET", path, true);
+         xhttp.send();
+         }
+         var cp = document.getElementById('color_white');
+         var cp = document.getElementById('color_black');
+         cp.addEventListener("change", function(event) {
+         call('color', event.target.value.substr(1));
+         }, false);
+        </script>
+    </body>
+</html>
