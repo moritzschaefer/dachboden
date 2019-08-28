@@ -5,6 +5,7 @@ import machine
 import neopixel
 #from math import sin
 import utime
+#import os
 #import uos
 import socket
 #import array
@@ -56,7 +57,7 @@ class Chess:
         self.time_progress = 0
 
         self.player_time = 60*1000*5
-        self.game_time = (self.player_time,self.player_time)
+        self.game_time = [self.player_time,self.player_time]
 
 
     def get_lights(self):
@@ -81,7 +82,7 @@ class Chess:
 
 
     def restart(self):
-        self.game_time = (self.player_time, self.player_time)
+        self.game_time = [self.player_time, self.player_time]
         self.mode = "live"
 
     def set_player_time(self, time):
@@ -170,52 +171,9 @@ async def main(chess):
 class ApiHandler:
     def __init__(self, chess):
         self.chess = chess
-
+        self.file = open("website.html")
     def index(self):
-        return '''<html>
-            <head>
-                <title>ChessControl</title>
-            </head>
-            <body>
-                <button onclick="call('player_white')">Spieler 1</button>
-                <button onclick="call('player_black')">Spieler 2</button>
-                <button onclick="call('restart')">Restart</button>
-                <p id="result">Press a button</p>
-                <input type="color" id="set_white_color"/>
-                <input type="color" id="set_black_color"/>
-                <script type="text/javascript">
-                 var range = document.getElementById("range");
-                 range.addEventListener("change", function(event) {
-                 if(document.getElementById("music").value)
-                     call('gill_control', event.target.value);
-                 }, false);
-                 function handleClick(cb) {
-                 call('color_loop', cb.checked ? 1 : 0);
-                 }
-                 function call(operation, val) {
-                 var xhttp = new XMLHttpRequest();
-                 document.getElementById("result").innerHTML = "calling";
-                 xhttp.onreadystatechange = function() {
-                     if (this.readyState == 4 && this.status == 200) {
-                     document.getElementById("result").innerHTML = "done";
-                     }
-                 };
-                 var path = "/api?operation=" + operation;
-                 if(val) {
-                  path += "&value=" + val;
-                 }
-                 xhttp.open("GET", path, true);
-                 xhttp.send();
-                 }
-                 var cp = document.getElementById('color_white');
-                 var cp = document.getElementById('color_black');
-                 cp.addEventListener("change", function(event) {
-                 call('color', event.target.value.substr(1));
-                 }, false);
-                </script>
-            </body>
-             </html>
-            '''
+        return self.file.read()
 
     def get(self, api_request):
         print(api_request)
@@ -234,12 +192,12 @@ class ApiHandler:
             value = int(api_request['query_params']['value'])
             print("Set time to ", value)
             self.chess.set_player_time(value)
-        elif 'set_white_color' == operation:
+        elif 'set_color_white' == operation:
             html_color = api_request['query_params']['value']
             value = tuple(int(html_color[i:i+2], 16) for i in (0, 2, 4))
             print("Set white color to ", value)
             self.chess.set_color(player=0, color=value)
-        elif 'set_black_color' == operation:
+        elif 'set_color_black' == operation:
             html_color = api_request['query_params']['value']
             value = tuple(int(html_color[i:i+2], 16) for i in (0, 2, 4))
             print("Set black color to ", value)
