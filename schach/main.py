@@ -171,7 +171,7 @@ async def main(chess):
 class ApiHandler:
     def __init__(self, chess):
         self.chess = chess
-        self.file = open("website.html")
+        self.file = open("index.html")
     def index(self):
         return self.file.read()
 
