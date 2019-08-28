@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chess Clock</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+		    <style type="text/css">
+		     body,html	{
+             background: #333;
+             color:	#FFF;
+             font-size: 15vw;
+             font-family: verdana;
+             text-align: center;
+             height: 90%;
+             weight: 90%;
+         }
+		     div.button_clock_1 {
+             height:40%;
+             width: 80%;
+             margin: 0px auto;
+             background-color: #aaa;
+             text-align:center;
+		     }
+		     div.button_clock_2 {
+             height:40%;
+             width: 80%;
+             margin: 0px auto;
+             background-color: #aaa;
+             text-align:center;
+		     }
+         div.button_text{
+             transform: rotate(180deg);
+         }
+         div.button_settings	{
+	           height:20%;
+	           width: 20%;
+	           background-color: #111;
+         }
+		     p.debugMsg {
+             background: #333;
+             color:	#FFF;
+             font-size: 5vw;
+             font-family: verdana;
+             text-align: center;
+             height: 10%;
+             weight: 10%;
+         }
+        </style>
+    </head>
+
+    <body>
+		    <div class="button_clock_2" onclick="playerA()">
+            <!-- <div class="button_text"> -->
+            11:01 <!-- JS -->
+            </div>
+		    </div>
+		    <!-- <div class="button_settings" style="float:left; margin:5% 0% 5% 25%;"></div>  -->
+
+        <p class="debugMsg" id="demo"></p>
+
+		    <!-- <div class="button_settings" style="float:right; margin:5% 25% 5% 0%;"></div>  -->
+		    <div class="button_clock_1" onclick="playerB()" style="clear:both">
+			      11:00
+        </div>
+
+        <script type="text/javascript">
+         function playerA() {
+             document.getElementById("demo").innerHTML = "Spieler 1";
+         }
+         function playerB() {
+             document.getElementById("demo").innerHTML = "Spieler 2";
+         }
+         function () {
+             // format duration as string
+             var displayTime, getTimeString, resetButtonClasses, toggleButtons;
+             getTimeString = function (time) {
+                 var secs;
+                 secs = time.get('seconds');
+                 if (secs < 10) {
+                     secs = `0${secs}`;
+                 }
+                 return `${time.get('minutes')}:${secs}`;
+             };
+        </script>
+
+    </body>
+</html>
