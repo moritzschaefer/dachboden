@@ -2,7 +2,8 @@
 <html>
 <head>
   <title>Simple Chess Clock</title>
-  <meta name="description" content="A simple, pretty, online chess clock. Designed to be easy to use.">
+  <meta name="description" content="A simple, pretty, online chess clock.
+  Designed to be easy to use.">
   <style>
     body {
       background-color: #333;
@@ -19,8 +20,8 @@
       align-items: center;
       align-content: center;
       /* font-size: 15vw; */
-      width: 90vw;
-      height: 100vw;
+      width: 90%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -90,7 +91,7 @@
       text-align: center;
       font-size: 70px;
       font-family: monospace;
-      /* margin: 5%; */
+      /* z-index: 10; */
 		}
     div.reset {
       display: flex;
@@ -108,69 +109,83 @@
 		}
     /* Settings Window aka Sidenavigation */
     .sidenav {
-      height: 100%; /* 100% Full-height */
-      width: 0; /* 0 width - change this with JavaScript */
+      background-color: #111;
+      /* font-size: 15vw; */
+      width: 0%;
+      height: 100%;
+      /* margin: 5%; */
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      align-content: space-between;
+
+
+      opacity: 0.0;
+      transition: opacity 1.25s ease-in-out; /*hover transition effect*/
+      -moz-transition: opacity 1.25s ease-in-out;
+      -webkit-transition: opacity 1.25s ease-in-out;
       position: fixed; /* Stay in place */
-      z-index: 1; /* Stay on top */
-      top: 0; /* Stay at the top */
-      left: 0;
-      background-color: #111; /* Black*/
       overflow-x: hidden; /* Disable horizontal scroll */
-      padding-top: 60px; /* Place content 60px from the top */
-      transition: 0.5s; /* 0.5 second transition effect to slide in the sidenav */
+      z-index: 1; /* Stay on top */
     }
     /* The navigation menu links */
-    .sidenav a {
-      padding: 8px 8px 8px 32px;
-      text-decoration: none;
-      font-size: 25px;
-      color: #818181;
-      display: block;
-      transition: 0.3s;
+    .sidenavContainer {
+      background: #759;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: rotate(90deg);
+      align-items: center;
+      align-content: center;
+      text-align: center;
+      height: auto;
+      weight: auto;
+      padding: 5%;
+      color: white;
+      border-radius: 12px;
+      border: 5px solid #AAA;
     }
-    /* When you mouse over the navigation links, change their color */
-    .sidenav a:hover {
-      color: #f1f1f1;
+    input[type="color"] {
+      /* margin: .4rem; */
+      width: 30vw;
+      height: 30vh;
+      padding: 5%;
     }
     /* Position and style the close button (top right corner) */
-    .sidenav .closebtn {
-      position: absolute;
-      top: 0;
-      right: 25px;
-      font-size: 36px;
-      margin-left: 50px;
-    }
-
-    a { color: #aaf; text-decoration: none; }
   </style>
 </head>
 <body>
   <!-- Sidenavigation -->
   <div id="mySidenav" class="sidenav">
-    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-    <a href="#">About</a>
-    <a href="#">Services</a>
-    <a href="#">Clients</a>
-    <a href="#">Contact</a>
+    <div class="sidenavContainer">
+      <input type="color" id="color_a">
+    </div>
+    <div class="menuBar">
+     <div class="settings" onclick="closeNav();"></div>
+    </div>
+    <div class="sidenavContainer">
+      <input type="color" id="color_b">
+    </div>
   </div>
   <!-- Spieler 1 Button -->
-  <div onclick="switchTimer(a)" id="a" class="timer">
+  <div onclick="switchTimer(b)" id="a" class="timer">
     <div class="reverse">
-      <input type="text" value="05:00" />
+      <input class="colorpick" type="text" value="05:00" />
     </div>
   </div>
   <!-- Menu Bar -->
   <div class="menuBar">
     <div class="pause" onclick="startOrStop();call('pause')"></div>
-     <div class="settings" onclick="openNav();call('settings')"></div>
+     <div class="settings" onclick="openNav();"></div>
     <div class="reset" onclick="reset();call('reset')"></div>
   </div>
   <!-- Spieler 2 Button -->
-  <div onclick="switchTimer(b)" id="b" class="timer">
+  <div onclick="switchTimer(a)" id="b" class="timer">
     <input type="text" value="05:00" />
   </div>
-
-  <p id="debugMsg">Debug Field</p>
   <!-- JS Chess Clock Code -->
   <script>
     var a      = document.getElementById("a");
@@ -183,7 +198,6 @@
     var switchTime, aRemainingMsAtSwitch, bRemainingMsAtSwitch;
     var mainLoopTimeout;
     var winner;
-
     function pullTimesFromInput () {
       aMinutes = aTimer.value.split(':')[0] || 15;
       aSeconds = aTimer.value.split(':')[1] || 0;
@@ -255,8 +269,9 @@
       // Game is already over
       if (winner) { return; }
       // Same player is active
+      console.log("Player: " + player.id);
       if (player.id == runningTimer) {return; }
-      console.log("Player " + player.id);
+      console.log("Player: " + player.id);
       // No player is activ
       if (runningTimer == 'c') {
         runningTimer = player;
@@ -285,6 +300,9 @@
         document.body.className = "";
       }
     }
+    //TODO colours green button into yellow
+    function playToPauseYellow() {
+    }
     function stop () {
         window.clearTimeout(mainLoopTimeout);
         mainLoopTimeout = undefined;
@@ -301,13 +319,17 @@
     }
     setRunningBackground();
     // SettingsButton Sidenavigation function
-    /* Set the width of the side navigation to 250px */
+    /* Set the width of the side navigation to 90% */
     function openNav() {
-      document.getElementById("mySidenav").style.width = "250px";
+      document.getElementById("mySidenav").style.width = "100%";
+      document.getElementById("mySidenav").style.opacity = "1.25";
+      //document.getElementById(self).onclick= "closeNav()";
+
     }
     /* Set the width of the side navigation to 0 */
     function closeNav() {
       document.getElementById("mySidenav").style.width = "0";
+      document.getElementById("mySidenav").style.opacity = "1.25";
     }
 
     // ESP chip api
@@ -326,6 +348,15 @@
       xhttp.open("GET", path, true);
       xhttp.send();
     }
+    //TODO colorpicker!
+      var cp = document.getElementById('color_a');
+      var cp = document.getElementById('color_b');
+      cp.addEventListener("change", function(event) {
+      call('color', event.target.value.substr(1));
+      console.log("hi :)");
+      console.log(event.target.value.substr(1));
+      document.getElementById('a').style.color = event.target.value.substr(1);
+      }, false);
   </script>
 </body>
 </html>
