@@ -54,8 +54,8 @@
     .started .timer.running input {
       color: #222;
     }
-    .loser   { background: #F33; }
-    .winner  { background: #5C5; }
+    .loser   { background: red; }
+    .winner  { background: green; }
     div.menuBar {
       weight: auto;
       height: auto;
@@ -106,53 +106,10 @@
       font-family: monospace;
       /* margin: 5%; */
 		}
-    /* Settings Window aka Sidenavigation */
-    .sidenav {
-      height: 100%; /* 100% Full-height */
-      width: 0; /* 0 width - change this with JavaScript */
-      position: fixed; /* Stay in place */
-      z-index: 1; /* Stay on top */
-      top: 0; /* Stay at the top */
-      left: 0;
-      background-color: #111; /* Black*/
-      overflow-x: hidden; /* Disable horizontal scroll */
-      padding-top: 60px; /* Place content 60px from the top */
-      transition: 0.5s; /* 0.5 second transition effect to slide in the sidenav */
-    }
-    /* The navigation menu links */
-    .sidenav a {
-      padding: 8px 8px 8px 32px;
-      text-decoration: none;
-      font-size: 25px;
-      color: #818181;
-      display: block;
-      transition: 0.3s;
-    }
-    /* When you mouse over the navigation links, change their color */
-    .sidenav a:hover {
-      color: #f1f1f1;
-    }
-    /* Position and style the close button (top right corner) */
-    .sidenav .closebtn {
-      position: absolute;
-      top: 0;
-      right: 25px;
-      font-size: 36px;
-      margin-left: 50px;
-    }
-
     a { color: #aaf; text-decoration: none; }
   </style>
 </head>
 <body>
-  <!-- Sidenavigation -->
-  <div id="mySidenav" class="sidenav">
-    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-    <a href="#">About</a>
-    <a href="#">Services</a>
-    <a href="#">Clients</a>
-    <a href="#">Contact</a>
-  </div>
   <!-- Spieler 1 Button -->
   <div onclick="switchTimer(a)" id="a" class="timer">
     <div class="reverse">
@@ -160,30 +117,29 @@
     </div>
   </div>
   <!-- Menu Bar -->
+  <!-- <p class="debugMsg" id="debug"></p> -->
   <div class="menuBar">
-    <div class="pause" onclick="startOrStop();call('pause')"></div>
-     <div class="settings" onclick="openNav();call('settings')"></div>
-    <div class="reset" onclick="reset();call('reset')"></div>
+    <div class="pause" onclick="startOrStop()"></div>
+     <div class="settings" onclick=""></div>
+    <div class="reset" onclick="reset()"></div>
   </div>
   <!-- Spieler 2 Button -->
   <div onclick="switchTimer(b)" id="b" class="timer">
     <input type="text" value="05:00" />
   </div>
 
-  <p id="debugMsg">Debug Field</p>
   <!-- JS Chess Clock Code -->
   <script>
     var a      = document.getElementById("a");
     var aTimer = a.getElementsByTagName('input')[0];
     var b      = document.getElementById("b");
-    var bTimer = b.getElementsByTagName('input')[0];
     // if no player is active
     var c;
     var runningTimer = 'c';
+    var bTimer = b.getElementsByTagName('input')[0];
     var switchTime, aRemainingMsAtSwitch, bRemainingMsAtSwitch;
     var mainLoopTimeout;
     var winner;
-
     function pullTimesFromInput () {
       aMinutes = aTimer.value.split(':')[0] || 15;
       aSeconds = aTimer.value.split(':')[1] || 0;
@@ -252,11 +208,7 @@
       }
     };
     function switchTimer(player) {
-      // Game is already over
       if (winner) { return; }
-      // Same player is active
-      if (player.id == runningTimer) {return; }
-      console.log("Player " + player.id);
       // No player is activ
       if (runningTimer == 'c') {
         runningTimer = player;
@@ -300,32 +252,11 @@
       runningTimer = c;
     }
     setRunningBackground();
-    // SettingsButton Sidenavigation function
-    /* Set the width of the side navigation to 250px */
-    function openNav() {
-      document.getElementById("mySidenav").style.width = "250px";
-    }
-    /* Set the width of the side navigation to 0 */
-    function closeNav() {
-      document.getElementById("mySidenav").style.width = "0";
-    }
-
-    // ESP chip api
-    function call(operation, val) {
-      var xhttp = new XMLHttpRequest();
-      document.getElementById("result").innerHTML = "calling";
-      xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("result").innerHTML = "done";
-        }
-      };
-      var path = "/api?operation=" + operation;
-      if(val) {
-        path += "&value=" + val;
-      }
-      xhttp.open("GET", path, true);
-      xhttp.send();
-    }
+    // document.body.addEventListener('keyup', function (e) {
+    //   if (e.keyCode == 32) { switchTimer(); } // space
+    //   if (e.keyCode == 83) { startOrStop(); } // s
+    //   if (e.keyCode == 80) { startOrStop(); } // p
+    // });
   </script>
 </body>
 </html>
