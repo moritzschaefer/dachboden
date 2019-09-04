@@ -14,8 +14,6 @@
 #define UNIVERSE_COUNT 1    // Total number of Universes to listen for, starting at UNIVERSE
 #define LED_PIN    5
 #define CONFIG_TRIGGER_PIN 4
-#define AP_NAME "JellyControl6"
-#define AP_PWD "topsecret"
 
 struct Jelly
 {
@@ -29,6 +27,9 @@ struct Jelly
     unsigned long blink_begin_time = 0;
     RgbColor dimmedColor;
 };
+
+String g_name = "JellyControl";
+String g_password = "topsecret";
 
 int g_num_jellies = 0;
 int g_num_leds = 0;
@@ -106,6 +107,8 @@ bool loadConfig() {
         return false;
     }
 
+    g_name = json["name"].as<String>();
+    g_password = json["password"].as<String>();
     g_dmx_universe = json["dmx_universe"];
     g_dmx_channel_offset = json["dmx_channel_offset"];
     jellies[0].num_leds = json["num_leds0"];
@@ -124,6 +127,8 @@ bool saveConfig()
     StaticJsonBuffer<200> jsonBuffer;
     JsonObject& json = jsonBuffer.createObject();
 
+    json["name"] = g_name;
+    json["password"] = g_password;
     json["dmx_universe"] = g_dmx_universe;
     json["dmx_channel_offset"] = g_dmx_channel_offset;
     json["num_leds0"] = jellies[0].num_leds;
@@ -171,7 +176,12 @@ void setup() {
     wifiManager.setSaveParamsCallback(saveConfigCallback);
 
     char buf[20];
+    char buf2[20];
 
+    String(g_name).toCharArray(buf, 20);
+    WiFiManagerParameter cfg_name("name", "Name", buf, 20);
+    String(g_password).toCharArray(buf, 20);
+    WiFiManagerParameter cfg_password("password", "Password", buf, 20);
     String(g_dmx_universe).toCharArray(buf, 4);
     WiFiManagerParameter cfg_dmx_universe("dmx_universe", "DMX Universe", buf, 4);
     String(g_dmx_channel_offset).toCharArray(buf, 4);
@@ -188,6 +198,8 @@ void setup() {
     WiFiManagerParameter cfg_num_leds4("num_leds4", "Num LEDs Jelly 4", buf, 4);
 
     //  wifiManager.setAPCallback(configModeCallback);
+    wifiManager.addParameter(&cfg_name);
+    wifiManager.addParameter(&cfg_password);
     wifiManager.addParameter(&cfg_dmx_universe);
     wifiManager.addParameter(&cfg_dmx_channel_offset);
     wifiManager.addParameter(&cfg_num_leds0);
@@ -196,21 +208,26 @@ void setup() {
     wifiManager.addParameter(&cfg_num_leds3);
     wifiManager.addParameter(&cfg_num_leds4);
 
+    String(g_name).toCharArray(buf, 20);
+    String(g_password).toCharArray(buf2, 20);
+
     //wifiManager.resetSettings();
 
     if ( digitalRead(CONFIG_TRIGGER_PIN) == LOW ) 
     {
         Serial.println("WiFi Configuration Button triggered");
 
-        wifiManager.startConfigPortal(AP_NAME, AP_PWD);
+        wifiManager.startConfigPortal(buf, buf2);
         Serial.println("WiFi Configuration Portal exited");
     }
     else
     {
         Serial.println("using WiFiManager AutoConnect");
-        wifiManager.autoConnect(AP_NAME, AP_PWD);
+        wifiManager.autoConnect(buf, buf2);
     }
 
+    g_name               = String(cfg_name.getValue());
+    g_password           = String(cfg_password.getValue());
     g_dmx_universe       = String(cfg_dmx_universe.getValue()).toInt();
     g_dmx_channel_offset = String(cfg_dmx_channel_offset.getValue()).toInt();
     jellies[0].num_leds  = String(cfg_num_leds0.getValue()).toInt();
@@ -223,9 +240,18 @@ void setup() {
         saveConfig();
     }
 
-    Serial.println("Using DMX universe: " + String(g_dmx_universe));
-    Serial.println("Using DMX channel offset: " + String(g_dmx_channel_offset));
+    Serial.println("Setings:");
+    Serial.println("name: "               + String(g_name));
+    Serial.println("password: "           + String(g_password));
+    Serial.println("DMX universe: "       + String(g_dmx_universe));
+    Serial.println("DMX channel offset: " + String(g_dmx_channel_offset));
+    Serial.println("jelly 0 num_leds: "   + String(jellies[0].num_leds));
+    Serial.println("jelly 1 num_leds: "   + String(jellies[1].num_leds));
+    Serial.println("jelly 2 num_leds: "   + String(jellies[2].num_leds));
+    Serial.println("jelly 3 num_leds: "   + String(jellies[3].num_leds));
+    Serial.println("jelly 4 num_leds: "   + String(jellies[4].num_leds));
 
+    // count jellies and calculate total num leds
     for (int i = 0; i < MAX_JELLIES; i++)
     {
         if (jellies[i].num_leds < 1)
