@@ -171,7 +171,7 @@ void setup() {
     loadConfig();
 
     WiFiManager wifiManager;
-
+    wifiManager.setConfigPortalTimeout(180);
     wifiManager.setSaveConfigCallback(saveConfigCallback);
     wifiManager.setSaveParamsCallback(saveConfigCallback);
 
