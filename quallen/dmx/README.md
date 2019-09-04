@@ -17,11 +17,11 @@ Ethernet. Works with QLC+.
 
 * Each qualle has 6 channels:
   1. Dimmer
-  1. Red value
-  1. Green value
-  1. Blue value
-  1. Strobe frequency (0-25 Hz, 0 means on)
-  1. Strobe on duration (0-255 ms)
+  2. Red value
+  3. Green value
+  4. Blue value
+  5. Strobe frequency (0-25 Hz, 0 means on)
+  6. Strobe on duration (0-255 ms)
 
 * quallen go to GPIO 5 on esp32 and RX on esp8266 (when you set a different pin 
 it is ignored on esp8266).
