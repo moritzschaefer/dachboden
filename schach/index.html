@@ -43,7 +43,7 @@
       background: none;
       align-items: center;
     }
-    div.reverse {
+    .reverse {
       transform: rotate(180deg);
     }
     .running {
@@ -57,54 +57,33 @@
     }
     .loser   { background: #F33; }
     .winner  { background: #5C5; }
-    div.menuBar {
+    .menuBar{
       weight: auto;
       height: auto;
-      /* margin: center; */
-      /* border: 5px solid #AAA; */
       display: flex;
       justify-content: space-around;
       align-items: center;
     }
-    div.pause {
+    .menuBar div {
       display: flex;
       justify-content: space-around;
       align-items: center;
       width: 19vw;
       height: 19vw;
-      background: #5C5;
       border-radius: 50%;
       text-align: center;
-      transform: rotate(90deg);
-      font-size: 100px;
       font-family: monospace;
+    }
+    .pause {
+      background: #5C5;
       /* margin: 5%; */
 		}
-    div.settings {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      width: 19vw;
-      height: 19vw;
+    .settings {
       background: #38F;
-      border-radius: 50%;
-      text-align: center;
-      font-size: 70px;
-      font-family: monospace;
       /* z-index: 10; */
 		}
-    div.reset {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      width: 19vw;
-      height: 19vw;
+    .reset {
       background: #F33;
-      border-radius: 50%;
-      text-align: center;
-      transform: rotate(-k90deg);
-      font-size: 70px;
-      font-family: monospace;
       /* margin: 5%; */
 		}
     /* Settings Window aka Sidenavigation */
@@ -121,7 +100,6 @@
       align-items: center;
       text-align: center;
       align-content: space-between;
-
 
       opacity: 0.0;
       transition: opacity 1.25s ease-in-out; /*hover transition effect*/
@@ -158,18 +136,6 @@
   </style>
 </head>
 <body>
-  <!-- Sidenavigation -->
-  <div id="mySidenav" class="sidenav">
-    <div class="sidenavContainer">
-      <input type="color" id="color_a">
-    </div>
-    <div class="menuBar">
-     <div class="settings" onclick="closeNav();"></div>
-    </div>
-    <div class="sidenavContainer">
-      <input type="color" id="color_b">
-    </div>
-  </div>
   <!-- Spieler 1 Button -->
   <div onclick="switchTimer(b)" id="a" class="timer">
     <div class="reverse">
@@ -178,13 +144,34 @@
   </div>
   <!-- Menu Bar -->
   <div class="menuBar">
-    <div class="pause" onclick="startOrStop();call('pause')"></div>
-     <div class="settings" onclick="openNav();"></div>
-    <div class="reset" onclick="reset();call('reset')"></div>
+    <div class="pause" onclick="startOrStop();call('pause')">
+      <!-- <p style="font-size:20vw">&#9208;</p> -->
+      <p style="font-size:20vw">&#9654;</p>
+    </div>
+     <div class="settings" onclick="openNav();">
+      <p style="font-size:20vw">&#9881;</p>
+     </div>
+    <div class="reset" onclick="reset();call('reset')">
+      <p style="font-size:20vw">&#8634;</p>
+    </div>
   </div>
   <!-- Spieler 2 Button -->
   <div onclick="switchTimer(a)" id="b" class="timer">
     <input type="text" value="05:00" />
+  </div>
+  <!-- Settings -->
+  <div id="mySidenav" class="sidenav">
+    <div class="sidenavContainer">
+      <input type="color" id="color_a">
+    </div>
+    <div class="menuBar">
+     <div class="settings" onclick="closeNav();">
+      <p style="font-size:20vw">&#9881;</p>
+     </div>
+    </div>
+    <div class="sidenavContainer">
+      <input type="color" id="color_b">
+    </div>
   </div>
   <!-- JS Chess Clock Code -->
   <script>
@@ -269,7 +256,6 @@
       // Game is already over
       if (winner) { return; }
       // Same player is active
-      console.log("Player: " + player.id);
       if (player.id == runningTimer) {return; }
       console.log("Player: " + player.id);
       // No player is activ
