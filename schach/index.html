@@ -148,10 +148,10 @@
       <!-- <p style="font-size:20vw">&#9208;</p> -->
       <p style="font-size:20vw">&#9654;</p>
     </div>
-    <div class="settings" onclick="openNav();">
+    <div class="settings" onclick="openNav()">
       <p style="font-size:20vw">&#9881;</p>
     </div>
-    <div class="reset" onclick="reset();call('reset')">
+    <div class="reset" onclick="reset()">
       <p style="font-size:20vw">&#8634;</p>
     </div>
   </div>
@@ -281,14 +281,14 @@
       pullTimesFromInput();
       mainLoopTimeout = window.setTimeout(mainLoop, 1000 / 60);
       document.body.className = "started";
-      console.log("pause")
-      call('pause')
+      console.log("play")
+      call('play')
     } else {
       window.clearTimeout(mainLoopTimeout);
       mainLoopTimeout = undefined;
       document.body.className = "";
-      console.log("play")
-      call('play')
+      console.log("pause")
+      call('pause')
     }
   }
   //TODO colours green button into yellow
@@ -307,6 +307,7 @@
     bTimer.value = "05:00";
     stop();
     runningTimer = c;
+    call('reset');
   }
   setRunningBackground();
   // SettingsButton Sidenavigation function
