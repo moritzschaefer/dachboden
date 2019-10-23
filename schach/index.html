@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,134 +5,134 @@
   <meta name="description" content="A simple, pretty, online chess clock.
   Designed to be easy to use.">
   <style>
-    body {
-      background-color: #333;
-      display: flex;
-      margin: 0;
-      padding: 0;
-      flex-direction: column;
-      align-content: space-between;
-      height: 100vh;
-      weight: 100vw;
-    }
-    .timer  {
-      background: #759;
-      align-items: center;
-      align-content: center;
-      /* font-size: 15vw; */
-      width: 90%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      line-height: 1;
-      padding: 0;
-      margin: 5%;
-      color: white;
-      border-radius: 12px;
-      /* border: 5px solid #AAA; */
-    }
-    .timer input {
-      /* margin: 47% 0 0; */
-      font-size: 20vw;
-      text-align: center;
-      vertical-align: center;
-      width: 80%;
-      border: 5px black;
-      background: none;
-      align-items: center;
-    }
-    .reverse {
-      transform: rotate(180deg);
-    }
-    .running {
-      background: #419871;
-    }
-    .started .timer input {
-      /* border: solid 4px transparent; */
-    }
-    .started .timer.running input {
-      color: #222;
-    }
-    .loser   { background: #F33; }
-    .winner  { background: #5C5; }
-    .menuBar{
-      weight: auto;
-      height: auto;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-    }
-    .menuBar div {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      width: 19vw;
-      height: 19vw;
-      border-radius: 50%;
-      text-align: center;
-      font-family: monospace;
-    }
-    .pause {
-      background: #5C5;
-      /* margin: 5%; */
-		}
-    .settings {
-      background: #38F;
-      /* z-index: 10; */
-		}
-    .reset {
-      background: #F33;
-      /* margin: 5%; */
-		}
-    /* Settings Window aka Sidenavigation */
-    .sidenav {
-      background-color: #111;
-      /* font-size: 15vw; */
-      width: 0%;
-      height: 100%;
-      /* margin: 5%; */
-      color: white;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      align-content: space-between;
+  body {
+    background-color: #333;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    flex-direction: column;
+    align-content: space-between;
+    height: 100vh;
+    weight: 100vw;
+  }
+  .timer  {
+    background: #759;
+    align-items: center;
+    align-content: center;
+    /* font-size: 15vw; */
+    width: 90%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1;
+    padding: 0;
+    margin: 5%;
+    color: white;
+    border-radius: 12px;
+    /* border: 5px solid #AAA; */
+  }
+  .timer input {
+    /* margin: 47% 0 0; */
+    font-size: 20vw;
+    text-align: center;
+    vertical-align: center;
+    width: 80%;
+    border: 5px black;
+    background: none;
+    align-items: center;
+  }
+  .reverse {
+    transform: rotate(180deg);
+  }
+  .running {
+    background: #419871;
+  }
+  .started .timer input {
+    /* border: solid 4px transparent; */
+  }
+  .started .timer.running input {
+    color: #222;
+  }
+  .loser   { background: #F33; }
+  .winner  { background: #5C5; }
+  .menuBar{
+    weight: auto;
+    height: auto;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .menuBar div {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 19vw;
+    height: 19vw;
+    border-radius: 50%;
+    text-align: center;
+    font-family: monospace;
+  }
+  .pause {
+    background: #5C5;
+    /* margin: 5%; */
+  }
+  .settings {
+    background: #38F;
+    /* z-index: 10; */
+  }
+  .reset {
+    background: #F33;
+    /* margin: 5%; */
+  }
+  /* Settings Window aka Sidenavigation */
+  .sidenav {
+    background-color: #111;
+    /* font-size: 15vw; */
+    width: 0%;
+    height: 100%;
+    /* margin: 5%; */
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    align-content: space-between;
 
-      opacity: 0.0;
-      transition: opacity 1.25s ease-in-out; /*hover transition effect*/
-      -moz-transition: opacity 1.25s ease-in-out;
-      -webkit-transition: opacity 1.25s ease-in-out;
-      position: fixed; /* Stay in place */
-      overflow-x: hidden; /* Disable horizontal scroll */
-      z-index: 1; /* Stay on top */
-    }
-    /* The navigation menu links */
-    .sidenavContainer {
-      background: #759;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transform: rotate(90deg);
-      align-items: center;
-      align-content: center;
-      text-align: center;
-      height: auto;
-      weight: auto;
-      padding: 5%;
-      color: white;
-      border-radius: 12px;
-      border: 5px solid #AAA;
-    }
-    input[type="color"] {
-      /* margin: .4rem; */
-      width: 30vw;
-      height: 30vh;
-      padding: 5%;
-    }
-    /* Position and style the close button (top right corner) */
+    opacity: 0.0;
+    transition: opacity 1.25s ease-in-out; /*hover transition effect*/
+    -moz-transition: opacity 1.25s ease-in-out;
+    -webkit-transition: opacity 1.25s ease-in-out;
+    position: fixed; /* Stay in place */
+    overflow-x: hidden; /* Disable horizontal scroll */
+    z-index: 1; /* Stay on top */
+  }
+  /* The navigation menu links */
+  .sidenavContainer {
+    background: #759;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(90deg);
+    align-items: center;
+    align-content: center;
+    text-align: center;
+    height: auto;
+    weight: auto;
+    padding: 5%;
+    color: white;
+    border-radius: 12px;
+    border: 5px solid #AAA;
+  }
+  input[type="color"] {
+    /* margin: .4rem; */
+    width: 30vw;
+    height: 30vh;
+    padding: 5%;
+  }
+  /* Position and style the close button (top right corner) */
   </style>
 </head>
 <body>
@@ -145,13 +144,13 @@
   </div>
   <!-- Menu Bar -->
   <div class="menuBar">
-    <div class="pause" onclick="startOrStop();call('pause')">
+    <div class="pause" onclick="startOrStop()">
       <!-- <p style="font-size:20vw">&#9208;</p> -->
       <p style="font-size:20vw">&#9654;</p>
     </div>
-     <div class="settings" onclick="openNav();">
+    <div class="settings" onclick="openNav();">
       <p style="font-size:20vw">&#9881;</p>
-     </div>
+    </div>
     <div class="reset" onclick="reset();call('reset')">
       <p style="font-size:20vw">&#8634;</p>
     </div>
@@ -166,9 +165,9 @@
       <input type="color" id="color_a">
     </div>
     <div class="menuBar">
-     <div class="settings" onclick="closeNav();">
-      <p style="font-size:20vw">&#9881;</p>
-     </div>
+      <div class="settings" onclick="closeNav();">
+        <p style="font-size:20vw">&#9881;</p>
+      </div>
     </div>
     <div class="sidenavContainer">
       <input type="color" id="color_b">
@@ -176,174 +175,181 @@
   </div>
   <!-- JS Chess Clock Code -->
   <script>
-    var a      = document.getElementById("a");
-    var aTimer = a.getElementsByTagName('input')[0];
-    var b      = document.getElementById("b");
-    var bTimer = b.getElementsByTagName('input')[0];
-    // if no player is active
-    var c;
-    var runningTimer = 'c';
-    var switchTime, aRemainingMsAtSwitch, bRemainingMsAtSwitch;
-    var mainLoopTimeout;
-    var winner;
-    function pullTimesFromInput () {
-      aMinutes = aTimer.value.split(':')[0] || 15;
-      aSeconds = aTimer.value.split(':')[1] || 0;
-      bMinutes = bTimer.value.split(':')[0] || 15;
-      bSeconds = bTimer.value.split(':')[1] || 0;
-      aRemainingMsAtSwitch = (parseInt(aMinutes) * 60 + parseInt(aSeconds)) * 1000;
-      bRemainingMsAtSwitch = (parseInt(bMinutes) * 60 + parseInt(bSeconds)) * 1000;
-    }
-    function getRemainingMs () {
-      var currentTime            = new Date();
-      var elapsedTimeSinceSwitch = currentTime - switchTime;
-      var aRemainingMs, bRemainingMs;
+  var a      = document.getElementById("a");
+  var aTimer = a.getElementsByTagName('input')[0];
+  var b      = document.getElementById("b");
+  var bTimer = b.getElementsByTagName('input')[0];
+  // if no player is active
+  var c;
+  var runningTimer = 'c';
+  var switchTime, aRemainingMsAtSwitch, bRemainingMsAtSwitch;
+  var mainLoopTimeout;
+  var winner = false;
+  function pullTimesFromInput () {
+    aMinutes = aTimer.value.split(':')[0] || 15;
+    aSeconds = aTimer.value.split(':')[1] || 0;
+    bMinutes = bTimer.value.split(':')[0] || 15;
+    bSeconds = bTimer.value.split(':')[1] || 0;
+    aRemainingMsAtSwitch = (parseInt(aMinutes) * 60 + parseInt(aSeconds)) * 1000;
+    bRemainingMsAtSwitch = (parseInt(bMinutes) * 60 + parseInt(bSeconds)) * 1000;
+  }
+  function getRemainingMs () {
+    var currentTime            = new Date();
+    var elapsedTimeSinceSwitch = currentTime - switchTime;
+    var aRemainingMs, bRemainingMs;
 
-      if (runningTimer == 'a') {
-        aRemainingMs = aRemainingMsAtSwitch - elapsedTimeSinceSwitch;
-        bRemainingMs = bRemainingMsAtSwitch;
-      } else {
-        aRemainingMs = aRemainingMsAtSwitch;
-        bRemainingMs = bRemainingMsAtSwitch - elapsedTimeSinceSwitch;
-      };
-      return {
-        a:           aRemainingMs,
-        b:           bRemainingMs,
-        currentTime: currentTime
-      };
-    }
-    function mainLoop () {
-      if (winner) { return; }
-      var remainingMs = getRemainingMs();
-      aMinutes = parseInt((remainingMs.a + 999)/ 1000  / 60);
-      aSeconds = parseInt((remainingMs.a + 999)/ 1000) % 60 ;
-      bMinutes = parseInt((remainingMs.b + 999)/ 1000  / 60);
-      bSeconds = parseInt((remainingMs.b + 999)/ 1000) % 60 ;
-      aTimer.value = addLeadingZero(aMinutes) + ':' + addLeadingZero(aSeconds);
-      bTimer.value = addLeadingZero(bMinutes) + ':' + addLeadingZero(bSeconds);
-
-      if (aMinutes == 0 && aSeconds == 0) {
-        winner = 'b';
-        document.body.className = '';
-        a.className = a.className + " loser";
-        b.className = b.className + " winner";
-      } else if (bMinutes == 0 && bSeconds == 0) {
-        winner = 'a';
-        document.body.className = '';
-        a.className = a.className + " winner";
-        b.className = b.className + " loser";
-      } else {
-        mainLoopTimeout = window.setTimeout(mainLoop, 1000 / 60);
-      }
-    }
-    function addLeadingZero(n) {
-      if ( n < 10 && n > -10 ) {
-        return '0' + n;
-      } else {
-        return ''  + n;
-      }
-    }
-    function setRunningBackground() {
-      if (winner) { return; }
-      if (runningTimer == 'a') {
-        a.className = a.className.replace(/\s*running\s*/, '') + " running";
-        b.className = b.className.replace(/\s*running\s*/, '');
-      } else if (runningTimer == 'b') {
-        a.className = a.className.replace(/\s*running\s*/, '');
-        b.className = b.className.replace(/\s*running\s*/, '') + " running";
-      }
+    if (runningTimer == 'a') {
+      aRemainingMs = aRemainingMsAtSwitch - elapsedTimeSinceSwitch;
+      bRemainingMs = bRemainingMsAtSwitch;
+    } else {
+      aRemainingMs = aRemainingMsAtSwitch;
+      bRemainingMs = bRemainingMsAtSwitch - elapsedTimeSinceSwitch;
     };
-    function switchTimer(player) {
-      // Game is already over
-      if (winner) { return; }
-      // Same player is active
-      if (player.id == runningTimer) {return; }
-      console.log("Player: " + player.id);
-      // No player is activ
-      if (runningTimer == 'c') {
-        runningTimer = player;
-        startOrStop();
-      }
-      var remainingMs = getRemainingMs();
-      aRemainingMsAtSwitch = remainingMs.a;
-      bRemainingMsAtSwitch = remainingMs.b;
-      switchTime           = remainingMs.currentTime;
-      runningTimer         = (runningTimer == 'a' ? 'b' : 'a');
-      setRunningBackground();
+    return {
+      a:           aRemainingMs,
+      b:           bRemainingMs,
+      currentTime: currentTime
+    };
+  }
+  function mainLoop () {
+    if (winner) { return; }
+    console.log("main Loop...");
+    var remainingMs = getRemainingMs();
+    aMinutes = parseInt((remainingMs.a + 999)/ 1000  / 60);
+    aSeconds = parseInt((remainingMs.a + 999)/ 1000) % 60 ;
+    bMinutes = parseInt((remainingMs.b + 999)/ 1000  / 60);
+    bSeconds = parseInt((remainingMs.b + 999)/ 1000) % 60 ;
+    aTimer.value = addLeadingZero(aMinutes) + ':' + addLeadingZero(aSeconds);
+    bTimer.value = addLeadingZero(bMinutes) + ':' + addLeadingZero(bSeconds);
+
+    if (aMinutes == 0 && aSeconds == 0) {
+      winner = 'b';
+      document.body.className = '';
+      a.className = a.className + " loser";
+      b.className = b.className + " winner";
+    } else if (bMinutes == 0 && bSeconds == 0) {
+      winner = 'a';
+      document.body.className = '';
+      a.className = a.className + " winner";
+      b.className = b.className + " loser";
+    } else {
+      mainLoopTimeout = window.setTimeout(mainLoop, 1000 / 60);
     }
-    function startOrStop () {
-      if (winner) { return; }
-      if (!mainLoopTimeout) {
-        // start
-        aTimer.blur();
-        bTimer.blur();
-        switchTime = new Date();
-        pullTimesFromInput();
-        mainLoopTimeout = window.setTimeout(mainLoop, 1000 / 60);
-        document.body.className = "started";
-      } else {
-        window.clearTimeout(mainLoopTimeout);
-        mainLoopTimeout = undefined;
-        document.body.className = "";
-      }
+  }
+  function addLeadingZero(n) {
+    if ( n < 10 && n > -10 ) {
+      return '0' + n;
+    } else {
+      return ''  + n;
     }
-    //TODO colours green button into yellow
-    function playToPauseYellow() {
+  }
+  function setRunningBackground() {
+    if (winner) { return; }
+    if (runningTimer == 'a') {
+      a.className = a.className.replace(/\s*running\s*/, '') + " running";
+      b.className = b.className.replace(/\s*running\s*/, '');
+    } else if (runningTimer == 'b') {
+      a.className = a.className.replace(/\s*running\s*/, '');
+      b.className = b.className.replace(/\s*running\s*/, '') + " running";
     }
-    function stop () {
-        window.clearTimeout(mainLoopTimeout);
-        mainLoopTimeout = undefined;
-        document.body.className = "";
-        runningTimer = 'c';
-        a.className = a.className.replace(/\s*running\s*/, '');
-        b.className = b.className.replace(/\s*running\s*/, '');
+  };
+  function switchTimer(player) {
+    // Game is already over
+    if (winner) { return; }
+    // Same player is active
+    if (player.id == runningTimer) {return; }
+    console.log("Player: " + player.id);
+    // No player is activ
+    if (runningTimer == 'c') {
+      runningTimer = player;
+      startOrStop();
     }
-    function reset () {
-      aTimer.value = "05:00";
-      bTimer.value = "05:00";
-      stop();
-      runningTimer = c;
-    }
+    var remainingMs = getRemainingMs();
+    aRemainingMsAtSwitch = remainingMs.a;
+    bRemainingMsAtSwitch = remainingMs.b;
+    switchTime           = remainingMs.currentTime;
+    runningTimer         = (runningTimer == 'a' ? 'b' : 'a');
     setRunningBackground();
-    // SettingsButton Sidenavigation function
-    /* Set the width of the side navigation to 90% */
-    function openNav() {
-      document.getElementById("mySidenav").style.width = "100%";
-      document.getElementById("mySidenav").style.opacity = "1.25";
-      //document.getElementById(self).onclick= "closeNav()";
+  }
+  function startOrStop () {
+    if (winner) { return; }
+    if (!mainLoopTimeout) {
+      // start
+      aTimer.blur();
+      bTimer.blur();
+      switchTime = new Date();
+      pullTimesFromInput();
+      mainLoopTimeout = window.setTimeout(mainLoop, 1000 / 60);
+      document.body.className = "started";
+      console.log("pause")
+      call('pause')
+    } else {
+      window.clearTimeout(mainLoopTimeout);
+      mainLoopTimeout = undefined;
+      document.body.className = "";
+      console.log("play")
+      call('play')
+    }
+  }
+  //TODO colours green button into yellow
+  function playToPauseYellow() {
+  }
+  function stop () {
+    window.clearTimeout(mainLoopTimeout);
+    mainLoopTimeout = undefined;
+    document.body.className = "";
+    runningTimer = 'c';
+    a.className = a.className.replace(/\s*running\s*/, '');
+    b.className = b.className.replace(/\s*running\s*/, '');
+  }
+  function reset () {
+    aTimer.value = "05:00";
+    bTimer.value = "05:00";
+    stop();
+    runningTimer = c;
+  }
+  setRunningBackground();
+  // SettingsButton Sidenavigation function
+  /* Set the width of the side navigation to 90% */
+  function openNav() {
+    document.getElementById("mySidenav").style.width = "100%";
+    document.getElementById("mySidenav").style.opacity = "1.25";
+    //document.getElementById(self).onclick= "closeNav()";
 
-    }
-    /* Set the width of the side navigation to 0 */
-    function closeNav() {
-      document.getElementById("mySidenav").style.width = "0";
-      document.getElementById("mySidenav").style.opacity = "1.25";
-    }
+  }
+  /* Set the width of the side navigation to 0 */
+  function closeNav() {
+    document.getElementById("mySidenav").style.width = "0";
+    document.getElementById("mySidenav").style.opacity = "1.25";
+  }
 
-    // ESP chip api
-    function call(operation, val) {
-      var xhttp = new XMLHttpRequest();
-      document.getElementById("result").innerHTML = "calling";
-      xhttp.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200) {
-          document.getElementById("result").innerHTML = "done";
-        }
-      };
-      var path = "/api?operation=" + operation;
-      if(val) {
-        path += "&value=" + val;
-      }
-      xhttp.open("GET", path, true);
-      xhttp.send();
+  // ESP chip api
+  function call(operation, val) {
+    console.log("GET request begin");
+    var xhttp = new XMLHttpRequest();
+    // document.getElementById("result").innerHTML = "calling";
+    // xhttp.onreadystatechange = function() {
+    //  if (this.readyState == 4 && this.status == 200) {
+    //    document.getElementById("result").innerHTML = "done";
+    //  }
+    // };
+    var path = "/api?operation=" + operation;
+    if(val) {
+      path += "&value=" + val;
     }
-    //TODO colorpicker!
-      var cp = document.getElementById('color_a');
-      var cp = document.getElementById('color_b');
-      cp.addEventListener("change", function(event) {
-      call('color', event.target.value.substr(1));
-      console.log("hi :)");
-      console.log(event.target.value.substr(1));
-      document.getElementById('a').style.color = event.target.value.substr(1);
-      }, false);
+    xhttp.open("GET", path, true);
+    xhttp.send();
+    console.log("GET request send");
+  }
+  //TODO colorpicker!
+  var cp = document.getElementById('color_a');
+  var cp = document.getElementById('color_b');
+  cp.addEventListener("change", function(event) {
+    call('color', event.target.value.substr(1));
+    console.log("hi :)");
+    console.log(event.target.value.substr(1));
+    document.getElementById('a').style.color = event.target.value.substr(1);
+  }, false);
   </script>
 </body>
 </html>
