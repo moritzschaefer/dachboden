@@ -23,7 +23,7 @@ class Mirror:
         self.last_step = ticks_ms()
     def step(self, ticks):
         if abs(ticks_diff(self.last_step,ticks)) > self.step_time:
-            self.start_h = (self.start_h +1) %360
+            self.start_h = (self.start_h +1) % 360
             for i in range(NUM_PIXEL):
                 r, g, b = hsv_to_rgb(int(self.start_h + i * (360. / NUM_PIXEL)) % 360, 1, 1)
 
