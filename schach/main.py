@@ -53,37 +53,40 @@ class Chess:
         self.Counter = 0
         #self.ambiente = ambiente.Ambiente(self.sender)
         #self.mode = "ambiente"
-        self.mode = "live"
+
+        #self.mode = "live"
+        self.mode = "pause"
         self.time_progress = 0
 
         self.player_time = 60*1000*5
         self.game_time = [self.player_time,self.player_time]
-
+        self.web_time = [self.player_time,self.player_time]
 
     def get_lights(self):
         return self.board
 
 
-    def set_turn(self, player):
+    def set_turn(self, player, time):
         if player == "white":
-            player = 0
+            self.player = 0
         elif player == "black":
-            player = 1
+            self.player = 1
         else:
             print("Could not get the player turn")
 
-        self.game_time[self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
-        self.player = player
+        self.game_time[not self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
+        self.web_time[self.player] = time
         self.board = [self.player_colors[self.player] for x in self.board]
         self.sender.send(self.board)
         self.time = utime.ticks_ms()
         self.time_progress = 0
-
+        print("Time difference between web and controller", self.game_time, self.web_time)
 
 
     def restart(self):
         self.game_time = [self.player_time, self.player_time]
-        self.mode = "live"
+        self.web_time = [self.player_time, self.player_time]
+        self.mode = "pause"
 
     def set_player_time(self, time):
         self.player_time = time * 1000 * 60
@@ -91,14 +94,26 @@ class Chess:
     def set_color(self, player, color):
         self.player_colors[player] = color
 
+    def pause(self):
+        self.game_time[self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
+        self.mode = "pause"
+
+
+    def play(self):
+        self.time = utime.ticks_ms()
+        self.board = [self.player_colors[self.player] for x in self.board]
+        self.sender.send(self.board)
+        self.time_progress = 0
+        self.mode = "live"
+
     def step(self):
         time_diff = abs(utime.ticks_diff(utime.ticks_ms(), self.time))
         if self.mode == "ambiente":
             self.ambiente.ambiente_step()
         elif self.mode == "live":
-            if time_diff > self.game_time[self.player]:
+            if time_diff > self.game_time[self.player]: #Time has been running down
                 self.time_out(player = self.player)
-            elif  (self.game_time[self.player] * self.time_progress / PIXELS)  >  time_diff :
+            elif  (self.game_time[self.player] * self.time_progress / PIXELS)  >  time_diff : #Next pixel lights out
                     self.time_progress += 1
                     for i in range(self.time_progress):
                         self.board[i] = (10, 10, 10)
@@ -106,6 +121,8 @@ class Chess:
             else:
                 pass
 
+        elif self.mode == "pause":
+            self.ambiente.ambiente_step()
         else:
             self.arcade_mode_step(time_diff)
 
@@ -139,14 +156,13 @@ class Chess:
         self.time = utime.ticks_ms()
         self.player = (self.player + 1) % 2
         self.sender.send(self.board)
-
         self.Counter += 1
 
 
     def time_out(self, player):
         for i in range(20):
             self.board = [tuple([i % 2 * 200] * 3) for _ in self.board]
-
+        self.mode = "ambiente"
 
 class Sender():
     def __init__(self):
@@ -171,23 +187,32 @@ async def main(chess):
 class ApiHandler:
     def __init__(self, chess):
         self.chess = chess
-        self.file = open("index.html")
+        file = open("index.html")
+        self.INDEX = str(file.read())
+        file.close()
     def index(self):
-        return self.file.read()
-
+        return self.INDEX
     def get(self, api_request):
+        print("Der Apirequest ist angekommen :")
         print(api_request)
         operation =  api_request['query_params'].get('operation', 'index')
-        if 'player_white' == operation:
+        if 'player_black' == operation:
+            value = int(api_request['query_params']['value'])
             print("Blacks turn now")
-            self.chess.set_turn("black")
-
-        elif 'player_black' == operation:
+            self.chess.set_turn("black", time=value)
+        elif 'player_white' == operation:
+            value = int(api_request['query_params']['value'])
             print("Whites turn now")
-            self.chess.set_turn("white")
+            self.chess.set_turn("white", time=value)
         elif 'restart' == operation:
             print("Restart Game")
             self.chess.restart()
+        elif 'start' == operation:
+            print("Starting a Game")
+            self.chess.start()
+        elif 'pause' == operation:
+            print("Pausing the Game")
+            self.chess.pause()
         elif 'set_time'  == operation:
             value = int(api_request['query_params']['value'])
             print("Set time to ", value)
@@ -203,7 +228,11 @@ class ApiHandler:
             print("Set black color to ", value)
             self.chess.set_color(player=1, color=value)
         elif operation == 'index':
-            return self.index()
+            print("Der Nutzer wollte die Website sehen")
+            return self.INDEX
+        elif operation == 'hello':
+            print("Hello world")
+            return('<!DOCTYPE html> < html >  < header > < title > EasterEgg: < / title > < / header > < body > Hello  world < / body >< / html >')
 
 
 if __name__ == "__main__":
