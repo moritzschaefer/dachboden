@@ -20,13 +20,13 @@ import ambiente
 # 4,5,6 RGB Pixel 1
 # ...
 
-DATA_PIN = 2
+DATA_PIN = 14
 PIXELS = 97
 MAX_ROTATIONS = 20
-
+INTENSITY = 0.1
 
 class Chess:
-    player_colors=[(150,0,0),(0,150,0)]
+    player_colors=[(15,0,0),(0,15,0)]
 
     def __init__(self):
         pixel_w = int(PIXELS/2)
@@ -92,7 +92,7 @@ class Chess:
         self.player_time = time * 1000 * 60
 
     def set_color(self, player, color):
-        self.player_colors[player] = color
+        self.player_colors[player] = tuple([int(x * INTENSITY) for x in color])
 
     def pause(self):
         self.game_time[self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
