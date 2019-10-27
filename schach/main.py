@@ -99,7 +99,7 @@ class Chess:
         self.mode = "pause"
 
 
-    def play(self):
+    def start(self):
         self.time = utime.ticks_ms()
         self.board = [self.player_colors[self.player] for x in self.board]
         self.sender.send(self.board)
@@ -111,9 +111,9 @@ class Chess:
         if self.mode == "ambiente":
             self.ambiente.ambiente_step()
         elif self.mode == "live":
-            if time_diff > self.game_time[self.player]: #Time has been running down
+            if time_diff > self.web_time[self.player]: #Time has been running down
                 self.time_out(player = self.player)
-            elif  (self.game_time[self.player] * self.time_progress / PIXELS)  >  time_diff : #Next pixel lights out
+            elif (self.web_time[self.player] * self.time_progress / PIXELS) > time_diff: #Next pixel lights out
                     self.time_progress += 1
                     for i in range(self.time_progress):
                         self.board[i] = (10, 10, 10)
