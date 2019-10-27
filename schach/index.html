@@ -134,12 +134,15 @@
   }
   /* Position and style the close button (top right corner) */
   </style>
+
+<!-- HTML Code -->
+
 </head>
 <body>
   <!-- Spieler 1 Button -->
   <div onclick="switchTimer(b)" id="a" class="timer">
     <div class="reverse">
-      <input class="colorpick" type="text" value="05:00" />
+      <input type="text" value="05:00" />
     </div>
   </div>
   <!-- Menu Bar -->
@@ -162,7 +165,7 @@
   <!-- Settings -->
   <div id="mySidenav" class="sidenav">
     <div class="sidenavContainer">
-      <input type="color" id="color_a">
+      <input type="color" id="color_a" onclick="sendColor()">
     </div>
     <div class="menuBar">
       <div class="settings" onclick="closeNav();">
@@ -173,184 +176,199 @@
       <input type="color" id="color_b">
     </div>
   </div>
-  <!-- JS Chess Clock Code -->
-  <script>
-  var a      = document.getElementById("a");
-  var aTimer = a.getElementsByTagName('input')[0];
-  var b      = document.getElementById("b");
-  var bTimer = b.getElementsByTagName('input')[0];
-  // if no player is active
-  var c;
-  var runningTimer = 'c';
-  var switchTime, aRemainingMsAtSwitch, bRemainingMsAtSwitch;
-  var mainLoopTimeout;
-  var winner = false;
-  function pullTimesFromInput () {
-    aMinutes = aTimer.value.split(':')[0] || 15;
-    aSeconds = aTimer.value.split(':')[1] || 0;
-    bMinutes = bTimer.value.split(':')[0] || 15;
-    bSeconds = bTimer.value.split(':')[1] || 0;
-    aRemainingMsAtSwitch = (parseInt(aMinutes) * 60 + parseInt(aSeconds)) * 1000;
-    bRemainingMsAtSwitch = (parseInt(bMinutes) * 60 + parseInt(bSeconds)) * 1000;
-  }
-  function getRemainingMs () {
-    var currentTime            = new Date();
-    var elapsedTimeSinceSwitch = currentTime - switchTime;
-    var aRemainingMs, bRemainingMs;
 
-    if (runningTimer == 'a') {
-      aRemainingMs = aRemainingMsAtSwitch - elapsedTimeSinceSwitch;
-      bRemainingMs = bRemainingMsAtSwitch;
-    } else {
-      aRemainingMs = aRemainingMsAtSwitch;
-      bRemainingMs = bRemainingMsAtSwitch - elapsedTimeSinceSwitch;
-    };
-    return {
-      a:           aRemainingMs,
-      b:           bRemainingMs,
-      currentTime: currentTime
-    };
-  }
-  function mainLoop () {
-    if (winner) { return; }
-    console.log("main Loop...");
-    var remainingMs = getRemainingMs();
-    aMinutes = parseInt((remainingMs.a + 999)/ 1000  / 60);
-    aSeconds = parseInt((remainingMs.a + 999)/ 1000) % 60 ;
-    bMinutes = parseInt((remainingMs.b + 999)/ 1000  / 60);
-    bSeconds = parseInt((remainingMs.b + 999)/ 1000) % 60 ;
-    aTimer.value = addLeadingZero(aMinutes) + ':' + addLeadingZero(aSeconds);
-    bTimer.value = addLeadingZero(bMinutes) + ':' + addLeadingZero(bSeconds);
+<!-- JS Chess Clock Code -->
 
-    if (aMinutes == 0 && aSeconds == 0) {
-      winner = 'b';
-      document.body.className = '';
-      a.className = a.className + " loser";
-      b.className = b.className + " winner";
-    } else if (bMinutes == 0 && bSeconds == 0) {
-      winner = 'a';
-      document.body.className = '';
-      a.className = a.className + " winner";
-      b.className = b.className + " loser";
-    } else {
-      mainLoopTimeout = window.setTimeout(mainLoop, 1000 / 60);
-    }
-  }
-  function addLeadingZero(n) {
-    if ( n < 10 && n > -10 ) {
-      return '0' + n;
-    } else {
-      return ''  + n;
-    }
-  }
-  function setRunningBackground() {
-    if (winner) { return; }
-    if (runningTimer == 'a') {
-      a.className = a.className.replace(/\s*running\s*/, '') + " running";
-      b.className = b.className.replace(/\s*running\s*/, '');
-    } else if (runningTimer == 'b') {
-      a.className = a.className.replace(/\s*running\s*/, '');
-      b.className = b.className.replace(/\s*running\s*/, '') + " running";
-    }
+<script>
+var a      = document.getElementById("a");
+var aTimer = a.getElementsByTagName('input')[0];
+var b      = document.getElementById("b");
+var bTimer = b.getElementsByTagName('input')[0];
+// if no player is active
+var c;
+var runningTimer = 'c';
+var switchTime, aRemainingMsAtSwitch, bRemainingMsAtSwitch;
+var mainLoopTimeout;
+var winner = false;
+function pullTimesFromInput () {
+  aMinutes = aTimer.value.split(':')[0] || 15;
+  aSeconds = aTimer.value.split(':')[1] || 0;
+  bMinutes = bTimer.value.split(':')[0] || 15;
+  bSeconds = bTimer.value.split(':')[1] || 0;
+  aRemainingMsAtSwitch = (parseInt(aMinutes) * 60 + parseInt(aSeconds)) * 1000;
+  bRemainingMsAtSwitch = (parseInt(bMinutes) * 60 + parseInt(bSeconds)) * 1000;
+}
+function getRemainingMs () {
+  var currentTime            = new Date();
+  var elapsedTimeSinceSwitch = currentTime - switchTime;
+  var aRemainingMs, bRemainingMs;
+  if (runningTimer == 'a') {
+    aRemainingMs = aRemainingMsAtSwitch - elapsedTimeSinceSwitch;
+    bRemainingMs = bRemainingMsAtSwitch;
+  } else {
+    aRemainingMs = aRemainingMsAtSwitch;
+    bRemainingMs = bRemainingMsAtSwitch - elapsedTimeSinceSwitch;
   };
-  function switchTimer(player) {
-    // Game is already over
-    if (winner) { return; }
-    // Same player is active
-    if (player.id == runningTimer) {return; }
-    console.log("Player: " + player.id);
-    // No player is activ
-    if (runningTimer == 'c') {
-      runningTimer = player;
-      startOrStop();
-    }
-    var remainingMs = getRemainingMs();
-    aRemainingMsAtSwitch = remainingMs.a;
-    bRemainingMsAtSwitch = remainingMs.b;
-    switchTime           = remainingMs.currentTime;
-    runningTimer         = (runningTimer == 'a' ? 'b' : 'a');
-    setRunningBackground();
+  return {
+    a:           aRemainingMs,
+    b:           bRemainingMs,
+    currentTime: currentTime
+  };
+}
+function mainLoop () {
+  if (winner) { return; }
+  console.log("main Loop...");
+  var remainingMs = getRemainingMs();
+  aMinutes = parseInt((remainingMs.a + 999)/ 1000  / 60);
+  aSeconds = parseInt((remainingMs.a + 999)/ 1000) % 60 ;
+  bMinutes = parseInt((remainingMs.b + 999)/ 1000  / 60);
+  bSeconds = parseInt((remainingMs.b + 999)/ 1000) % 60 ;
+  aTimer.value = addLeadingZero(aMinutes) + ':' + addLeadingZero(aSeconds);
+  bTimer.value = addLeadingZero(bMinutes) + ':' + addLeadingZero(bSeconds);
+  if (aMinutes == 0 && aSeconds == 0) {
+    winner = 'b';
+    document.body.className = '';
+    a.className = a.className + " loser";
+    b.className = b.className + " winner";
+  } else if (bMinutes == 0 && bSeconds == 0) {
+    winner = 'a';
+    document.body.className = '';
+    a.className = a.className + " winner";
+    b.className = b.className + " loser";
+  } else {
+    mainLoopTimeout = window.setTimeout(mainLoop, 1000 / 60);
   }
-  function startOrStop () {
-    if (winner) { return; }
-    if (!mainLoopTimeout) {
-      // start
-      aTimer.blur();
-      bTimer.blur();
-      switchTime = new Date();
-      pullTimesFromInput();
-      mainLoopTimeout = window.setTimeout(mainLoop, 1000 / 60);
-      document.body.className = "started";
-      console.log("play")
-      call('play')
-    } else {
-      window.clearTimeout(mainLoopTimeout);
-      mainLoopTimeout = undefined;
-      document.body.className = "";
-      console.log("pause")
-      call('pause')
-    }
+}
+function addLeadingZero(n) {
+  if ( n < 10 && n > -10 ) {
+    return '0' + n;
+  } else {
+    return ''  + n;
   }
-  //TODO colours green button into yellow
-  function playToPauseYellow() {
+}
+function setRunningBackground() {
+  if (winner) { return; }
+  if (runningTimer == 'a') {
+    a.className = a.className.replace(/\s*running\s*/, '') + " running";
+    b.className = b.className.replace(/\s*running\s*/, '');
+  } else if (runningTimer == 'b') {
+    a.className = a.className.replace(/\s*running\s*/, '');
+    b.className = b.className.replace(/\s*running\s*/, '') + " running";
   }
-  function stop () {
+};
+function switchTimer(player) {
+  // Game is already over
+  if (winner) { return; }
+  // Same player is active
+  if (player.id == runningTimer) {return;}
+  console.log("Player: " + runningTimer);
+  // No player is activ
+  if (runningTimer == 'c') {
+    runningTimer = player;
+    startOrStop();
+  }
+  var remainingMs = getRemainingMs();
+  aRemainingMsAtSwitch = remainingMs.a;
+  bRemainingMsAtSwitch = remainingMs.b;
+  switchTime           = remainingMs.currentTime;
+  runningTimer         = (runningTimer == 'a' ? 'b' : 'a');
+  // Calling
+  //TODO Spieler und Zeit übergeben.
+  //TODO player_black & player_white , set_color_black, set_color_white
+  if (runningTimer == "a") {
+    console.log(runningTimer + "RemainingMs= " + aRemainingMsAtSwitch);
+    call("player_black",aRemainingMsAtSwitch);
+  }
+  else {
+    console.log(runningTimer + "RemainingMs= " + bRemainingMsAtSwitch);
+    call("player_white",bRemainingMsAtSwitch);
+    //call(aRemainingMs);
+  }
+  setRunningBackground();
+}
+function startOrStop () {
+  if (winner) { return; }
+  if (!mainLoopTimeout) {
+    // start
+    aTimer.blur();
+    bTimer.blur();
+    switchTime = new Date();
+    pullTimesFromInput();
+    mainLoopTimeout = window.setTimeout(mainLoop, 1000 / 60);
+    document.body.className = "started";
+    console.log("play")
+    call('play')
+  } else {
     window.clearTimeout(mainLoopTimeout);
     mainLoopTimeout = undefined;
     document.body.className = "";
-    runningTimer = 'c';
-    a.className = a.className.replace(/\s*running\s*/, '');
-    b.className = b.className.replace(/\s*running\s*/, '');
+    console.log("pause")
+    call('pause')
   }
-  function reset () {
-    aTimer.value = "05:00";
-    bTimer.value = "05:00";
-    stop();
-    runningTimer = c;
-    call('reset');
+}
+//TODO colours green button into yellow
+function playToPauseYellow() {
+}
+function stop () {
+  window.clearTimeout(mainLoopTimeout);
+  mainLoopTimeout = undefined;
+  document.body.className = "";
+  runningTimer = 'c';
+  a.className = a.className.replace(/\s*running\s*/, '');
+  b.className = b.className.replace(/\s*running\s*/, '');
+}
+function reset () {
+  aTimer.value = "05:00";
+  bTimer.value = "05:00";
+  stop();
+  runningTimer = c;
+  call('reset');
+}
+setRunningBackground();
+// SettingsButton Sidenavigation function
+/* Set the width of the side navigation to 90% */
+function openNav() {
+  document.getElementById("mySidenav").style.width = "100%";
+  document.getElementById("mySidenav").style.opacity = "1.25";
+  //document.getElementById(self).onclick= "closeNav()";
+}
+/* Set the width of the side navigation to 0 */
+function closeNav() {
+  document.getElementById("mySidenav").style.width = "0";
+  document.getElementById("mySidenav").style.opacity = "1.25";
+}
+// ESP chip api
+function call(operation, val) {
+  console.log("GET request begin");
+  var xhttp = new XMLHttpRequest();
+  // document.getElementById("result").innerHTML = "calling";
+  // xhttp.onreadystatechange = function() {
+  //  if (this.readyState == 4 && this.status == 200) {
+  //    document.getElementById("result").innerHTML = "done";
+  //  }
+  // };
+  var path = "/api?operation=" + operation;
+  if(val) {
+    path += "&value=" + val;
   }
-  setRunningBackground();
-  // SettingsButton Sidenavigation function
-  /* Set the width of the side navigation to 90% */
-  function openNav() {
-    document.getElementById("mySidenav").style.width = "100%";
-    document.getElementById("mySidenav").style.opacity = "1.25";
-    //document.getElementById(self).onclick= "closeNav()";
+  xhttp.open("GET", path, true);
+  xhttp.send();
+  console.log("GET request send");
+}
 
-  }
-  /* Set the width of the side navigation to 0 */
-  function closeNav() {
-    document.getElementById("mySidenav").style.width = "0";
-    document.getElementById("mySidenav").style.opacity = "1.25";
-  }
-
-  // ESP chip api
-  function call(operation, val) {
-    console.log("GET request begin");
-    var xhttp = new XMLHttpRequest();
-    // document.getElementById("result").innerHTML = "calling";
-    // xhttp.onreadystatechange = function() {
-    //  if (this.readyState == 4 && this.status == 200) {
-    //    document.getElementById("result").innerHTML = "done";
-    //  }
-    // };
-    var path = "/api?operation=" + operation;
-    if(val) {
-      path += "&value=" + val;
-    }
-    xhttp.open("GET", path, true);
-    xhttp.send();
-    console.log("GET request send");
-  }
-  //TODO colorpicker!
-  var cp = document.getElementById('color_a');
-  var cp = document.getElementById('color_b');
-  cp.addEventListener("change", function(event) {
-    call('color', event.target.value.substr(1));
-    console.log("hi :)");
-    console.log(event.target.value.substr(1));
-    document.getElementById('a').style.color = event.target.value.substr(1);
-  }, false);
-  </script>
+//TODO colorpicker!
+//function sendColor() {
+//  console.log(document.getElementById("colorChoice").value;);
+//}
+//
+var cp = document.getElementById('color_a');
+var cp = document.getElementById('color_b');
+cp.addEventListener("change", function(event) {
+  call('color', event.target.value.substr(1));
+  console.log("hi :)");
+  console.log(event.target.value.substr(1));
+  document.getElementById('a').style.color = event.target.value.substr(1);
+}, false);
+</script>
 </body>
 </html>
