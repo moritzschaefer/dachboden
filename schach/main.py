@@ -9,7 +9,7 @@ import utime
 #import uos
 import socket
 #import array
-#import ambiente
+import ambiente
 #import stroboscope
 #import startup
 
@@ -51,7 +51,7 @@ class Chess:
         print("One Startup finished")
 
         self.Counter = 0
-        #self.ambiente = ambiente.Ambiente(self.sender)
+        self.ambiente = ambiente.Ambiente(self.sender)
         #self.mode = "ambiente"
 
         #self.mode = "live"
@@ -80,7 +80,7 @@ class Chess:
         self.sender.send(self.board)
         self.time = utime.ticks_ms()
         self.time_progress = 0
-        print("Time difference between web and controller", self.game_time, self.web_time)
+        print("Time difference between web and controller",  self.web_time, self.game_time)
 
 
     def restart(self):
