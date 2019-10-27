@@ -31,10 +31,8 @@
     margin: 5%;
     color: white;
     border-radius: 12px;
-    /* border: 5px solid #AAA; */
   }
   .timer input {
-    /* margin: 47% 0 0; */
     font-size: 20vw;
     text-align: center;
     vertical-align: center;
@@ -42,6 +40,14 @@
     border: 5px black;
     background: none;
     align-items: center;
+  }
+  .unselectable {
+    /* make unselectable */
+    -webkit-user-select: none;  /* Chrome all / Safari all */
+    -moz-user-select: none;     /* Firefox all */
+    -ms-user-select: none;      /* IE 10+ */
+    -webkit-touch-callout: none;
+    user-select: none;          /* Likely future */
   }
   .reverse {
     transform: rotate(180deg);
@@ -82,7 +88,7 @@
     background: #38F;
     /* z-index: 10; */
   }
-  .reset {
+  .restart {
     background: #F33;
     /* margin: 5%; */
   }
@@ -154,7 +160,7 @@
     <div class="settings" onclick="openNav()">
       <p style="font-size:20vw">&#9881;</p>
     </div>
-    <div class="reset" onclick="reset()">
+    <div class="restart" onclick="restart()">
       <p style="font-size:20vw">&#8634;</p>
     </div>
   </div>
@@ -317,7 +323,7 @@ function stop () {
   a.className = a.className.replace(/\s*running\s*/, '');
   b.className = b.className.replace(/\s*running\s*/, '');
 }
-function reset () {
+function restart () {
   aTimer.value = "05:00";
   bTimer.value = "05:00";
   stop();
@@ -359,15 +365,15 @@ function call(operation, val) {
 //function sendColor() {
 //  console.log(document.getElementById("colorChoice").value;);
 //}
-var cpw = document.getElementById('color_a');
-cpw.addEventListener("change", function(event) {
-  call('set_color_white', event.target.value.substr(1));
+var cpb = document.getElementById('color_a');
+cpb.addEventListener("change", function(event) {
+  call('set_color_black', event.target.value.substr(1));
   console.log("Colorpick= " + event.target.value.substr(1));
 }, false);
-var cpb = document.getElementById('color_b');
-cpb.addEventListener("change", function(event) {
+var cpw = document.getElementById('color_b');
+cpw.addEventListener("change", function(event) {
   console.log("Colorpick= " + event.target.value.substr(1));
-  call('set_color_black', event.target.value.substr(1));
+  call('set_color_white', event.target.value.substr(1));
 }, false);
 //
 //var cp = document.getElementById('color_a');
