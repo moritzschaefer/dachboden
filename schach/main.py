@@ -9,7 +9,7 @@ import utime
 #import uos
 import socket
 #import array
-#import ambiente
+import ambiente
 #import stroboscope
 #import startup
 
@@ -20,13 +20,13 @@ import socket
 # 4,5,6 RGB Pixel 1
 # ...
 
-DATA_PIN = 2
+DATA_PIN = 14
 PIXELS = 97
 MAX_ROTATIONS = 20
-
+INTENSITY = 0.1
 
 class Chess:
-    player_colors=[(150,0,0),(0,150,0)]
+    player_colors=[(15,0,0),(0,15,0)]
 
     def __init__(self):
         pixel_w = int(PIXELS/2)
@@ -51,7 +51,7 @@ class Chess:
         print("One Startup finished")
 
         self.Counter = 0
-        #self.ambiente = ambiente.Ambiente(self.sender)
+        self.ambiente = ambiente.Ambiente(self.sender)
         #self.mode = "ambiente"
 
         #self.mode = "live"
@@ -80,7 +80,7 @@ class Chess:
         self.sender.send(self.board)
         self.time = utime.ticks_ms()
         self.time_progress = 0
-        print("Time difference between web and controller", self.game_time, self.web_time)
+        print("Time difference between web and controller",  self.web_time, self.game_time)
 
 
     def restart(self):
@@ -92,14 +92,14 @@ class Chess:
         self.player_time = time * 1000 * 60
 
     def set_color(self, player, color):
-        self.player_colors[player] = color
+        self.player_colors[player] = tuple([int(x * INTENSITY) for x in color])
 
     def pause(self):
         self.game_time[self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
         self.mode = "pause"
 
 
-    def play(self):
+    def start(self):
         self.time = utime.ticks_ms()
         self.board = [self.player_colors[self.player] for x in self.board]
         self.sender.send(self.board)
@@ -111,9 +111,9 @@ class Chess:
         if self.mode == "ambiente":
             self.ambiente.ambiente_step()
         elif self.mode == "live":
-            if time_diff > self.game_time[self.player]: #Time has been running down
+            if time_diff > self.web_time[self.player]: #Time has been running down
                 self.time_out(player = self.player)
-            elif  (self.game_time[self.player] * self.time_progress / PIXELS)  >  time_diff : #Next pixel lights out
+            elif (self.web_time[self.player] * self.time_progress / PIXELS) > time_diff: #Next pixel lights out
                     self.time_progress += 1
                     for i in range(self.time_progress):
                         self.board[i] = (10, 10, 10)
