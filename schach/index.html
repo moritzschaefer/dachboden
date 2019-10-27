@@ -165,7 +165,7 @@
   <!-- Settings -->
   <div id="mySidenav" class="sidenav">
     <div class="sidenavContainer">
-      <input type="color" id="color_a" onclick="sendColor()">
+      <input type="color" id="color_a">
     </div>
     <div class="menuBar">
       <div class="settings" onclick="closeNav();">
@@ -296,8 +296,8 @@ function startOrStop () {
     pullTimesFromInput();
     mainLoopTimeout = window.setTimeout(mainLoop, 1000 / 60);
     document.body.className = "started";
-    console.log("play")
-    call('play')
+    console.log("call(start)")
+    call('start')
   } else {
     window.clearTimeout(mainLoopTimeout);
     mainLoopTimeout = undefined;
@@ -322,7 +322,7 @@ function reset () {
   bTimer.value = "05:00";
   stop();
   runningTimer = c;
-  call('reset');
+  call('restart');
 }
 setRunningBackground();
 // SettingsButton Sidenavigation function
@@ -339,7 +339,6 @@ function closeNav() {
 }
 // ESP chip api
 function call(operation, val) {
-  console.log("GET request begin");
   var xhttp = new XMLHttpRequest();
   // document.getElementById("result").innerHTML = "calling";
   // xhttp.onreadystatechange = function() {
@@ -360,15 +359,25 @@ function call(operation, val) {
 //function sendColor() {
 //  console.log(document.getElementById("colorChoice").value;);
 //}
-//
-var cp = document.getElementById('color_a');
-var cp = document.getElementById('color_b');
-cp.addEventListener("change", function(event) {
-  call('color', event.target.value.substr(1));
-  console.log("hi :)");
-  console.log(event.target.value.substr(1));
-  document.getElementById('a').style.color = event.target.value.substr(1);
+var cpw = document.getElementById('color_a');
+cpw.addEventListener("change", function(event) {
+  call('set_color_white', event.target.value.substr(1));
+  console.log("Colorpick= " + event.target.value.substr(1));
 }, false);
+var cpb = document.getElementById('color_b');
+cpb.addEventListener("change", function(event) {
+  console.log("Colorpick= " + event.target.value.substr(1));
+  call('set_color_black', event.target.value.substr(1));
+}, false);
+//
+//var cp = document.getElementById('color_a');
+//var cp = document.getElementById('color_b');
+//cp.addEventListener("change", function(event) {
+//  call('color', event.target.value.substr(1));
+//  console.log("hi :)");
+//  console.log(event.target.value.substr(1));
+//  document.getElementById('a').style.color = event.target.value.substr(1);
+//}, false);
 </script>
 </body>
 </html>
