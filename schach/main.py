@@ -93,6 +93,8 @@ class Chess:
 
     def set_color(self, player, color):
         self.player_colors[player] = tuple([int(x * INTENSITY) for x in color])
+        self.board = [self.player_colors[player] for x in self.board]
+        self.sender.send(self.board)
 
     def pause(self):
         self.game_time[self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
@@ -112,9 +114,12 @@ class Chess:
             self.ambiente.ambiente_step()
         elif self.mode == "live":
             if time_diff > self.web_time[self.player]: #Time has been running down
+                print("Time is out")
                 self.time_out(player = self.player)
-            elif (self.web_time[self.player] * self.time_progress / PIXELS) > time_diff: #Next pixel lights out
-                    self.time_progress += 1
+            elif (self.web_time[self.player] * (self.time_progress / PIXELS)) < time_diff: #Next pixel lights out
+                    print("Pixel is fading out", time_diff, self.time_progress)
+                    #self.time_progress += 1
+                    self.time_progress = (time_diff  * PIXELS ) // self.web_time[self.player] + 1
                     for i in range(self.time_progress):
                         self.board[i] = (10, 10, 10)
                     self.sender.send(self.board)
@@ -161,7 +166,9 @@ class Chess:
 
     def time_out(self, player):
         for i in range(20):
-            self.board = [tuple([i % 2 * 200] * 3) for _ in self.board]
+            self.board = [tuple([i % 2 * 10] * 3) for _ in self.board]
+            self.sender.send(self.board)
+            utime.sleep_ms(100)
         self.mode = "ambiente"
 
 class Sender():
@@ -232,7 +239,14 @@ class ApiHandler:
             return self.INDEX
         elif operation == 'hello':
             print("Hello world")
-            return('<!DOCTYPE html> < html >  < header > < title > EasterEgg: < / title > < / header > < body > Hello  world < / body >< / html >')
+            return('''
+            <!DOCTYPE html>
+             <html> 
+              <header> 
+              <title> EasterEgg: </title> 
+              </header> 
+              <body> Hello  world </body>
+              </html>''')
 
 
 if __name__ == "__main__":

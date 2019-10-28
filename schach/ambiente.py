@@ -42,7 +42,7 @@ class Ambiente:
 
     def moving_slides_init(self, width = 4):
 
-        c1, c2 =random.sample([(100,0,0),(0,100,0)],2)
+        c1, c2 =random.sample([(15,0,0),(0,15,0)],2)
         self.pixels = [c1 if (i//width) % 2 else c2 for i in range(self.n_pixels)]
 
     def eat_pixel(self):
