@@ -141,3 +141,58 @@ Raspberry for controlling neopixels and audio on the disco toilet.
 
 
 REPL Password: incubator
+
+## Dancefloor-Beleuchtung mit E1.31 DMX
+
+Im Gegensatz zu eigenständigen Installationen, wie dem Kicker oder dem
+Schachbrett, sollten die Projekte, die als Dancefloor-Beleuchtung gedacht sind,
+möglichst zentral über das Lichtpult bzw. den Lichtrechner gesteuert werden
+können. Dort wird die Lichtsoftware QLC+ eingesetzt. Die Lichter laufen wie gehabt
+auf ESP32- oder ESP8266-Basis, die Datenübertragung findet also über WLAN statt.
+Deshalb erfolgt die Einbindung in QLC+ über das E1.31-Protokoll, welches
+dazu gedacht ist DMX-Daten über IP-Netzwerke zu übertragen.
+
+Eine zeitkritische Anwendung wie DMX-Lichtkontrolle über WLAN zu betreiben ist
+allgemein keine gute Idee, da wir es aber nun mal aus historischen Gründen so
+machen, gibt es für die Geräte immerhin ein eigenes WLAN-Netz (über den schwarzen
+TP-Link am Lichthaus, der zu den meisten Geräten Sichtkontakt hat). Es hört auf
+den Namen "Fischnetz" mit dem üblichen Passwort und soll *exklusiv* für die
+DMX-Steuerung der Lichttechnik genutzt werden.
+
+Die Geräte hören dabei alle auf das DMX Universum 5, so dass man auf dem Lichtrechner
+sich nur zum "Fischnetz" verbinden und den Output für Universe 5 auf E1.31 stellen muss.
+
+Es handelt sich bei den Geräten z.B. um den Stroboter, die Quallen und das UV-Strobo.
+Die Firmware setzt im Gegensatz zu den meisten anderen Projekten nicht auf Micropython, 
+sondern auf den Arduino Cores der jeweiligen Controller auf (siehe z.B. den Code
+für den Stroboter).
+
+Alle belegten Kanäle im Universe 5 sind hier aufgeführt
+(und werden hoffentlich aktualisiert):
+
+| Kanal         | Gerät           |
+| ------------- |:-------------:|
+| 1 - 30    | Masterqualle |
+| 31 - 36   | Qualle 1  |
+| 37 - 42   | Qualle 2  |
+| 43 - 48   | Qualle 3  |
+| 48 - 54   | Qualle 4  |
+| 55 - 60   | Qualle 5  |
+| 61 - 66   | Qualle 6  |
+| 67 - 72   | Qualle 7  |
+| 73 - 78   | Qualle 8  |
+| 78 - 84   | Qualle 9  |
+| 85 - 90   | Qualle 10 |
+| 91 - 96   | Qualle 11 |
+| 97 - 102  | Qualle 12 |
+| 103 - 108 | Qualle 13 |
+| 108 - 114 | Qualle 14 |
+| 115 - 120 | Qualle 15 |
+| 141 - 145 | UV-Strobo |
+| 151 - 158 | Stroboter |
+| 161 - 165 | Lichtpeitsche |
+| 171 - 175 | Friedrich2 |
+
+
+
+
