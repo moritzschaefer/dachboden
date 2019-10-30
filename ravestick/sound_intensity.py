@@ -21,7 +21,7 @@ class SoundIntensity:
         self.long_term_std = 0.5
         self.buffer = [0] * WINDOW_LENGTH  # (for smoothing)
         self.index = 0
-        self.adc = machine.ADC(machine.Pin(33))
+        self.adc = machine.ADC(machine.Pin(32))  # TODO new PIN
         self.adc.atten(machine.ADC.ATTN_11DB)  # 3,6V input
         self.adc.width(machine.ADC.WIDTH_12BIT)  # 3,6V input
         self.mean_voltage = 1000
@@ -49,7 +49,7 @@ class SoundIntensity:
             power += abs(a - self.mean_voltage)
             mean += a
 
-        self._new_value(power / (SAMPLE_COUNT * self.mean_voltage))
+        self._new_value(power / max(1, SAMPLE_COUNT * self.mean_voltage))
         cur_val = self.current_average()
         self.mean_voltage = mean / SAMPLE_COUNT
 
@@ -72,6 +72,6 @@ class SoundIntensity:
         # return val**3
         # print((cur_val - self.long_term_mean) / self.long_term_std)
 
-        intensity = self.long_term_std + (cur_val - self.long_term_mean) / self.long_term_std
+        intensity = self.long_term_std + (cur_val - self.long_term_mean) / max(1, self.long_term_std)
         # print(intensity)
         return min(1.0, max(0.0, intensity))

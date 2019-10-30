@@ -3,6 +3,8 @@
 #esp.osdebug(None)
 
 import esp
+import webrepl
+
 esp.osdebug(None)
 def do_connect():
     import network
@@ -10,12 +12,12 @@ def do_connect():
     if not sta_if.isconnected():
         print('connecting to network...')
         sta_if.active(True)
-        sta_if.connect('Incubator', 'Fl4mongo')
+        sta_if.connect('Morispot', 'moritzsch')
         while not sta_if.isconnected():
             pass
+        
     print('network config:', sta_if.ifconfig())
 
 do_connect()
-import webrepl
 
 webrepl.start()

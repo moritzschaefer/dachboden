@@ -1,11 +1,14 @@
+import gc
 from math import sin
 
 import http_api_handler
 import machine
+import micropython
 import neopixel
 import uasyncio as asyncio
 import uhttpd
 from cannon import Cannon
+from compass import Compass
 from sound_intensity import SoundIntensity
 from utime import ticks_add, ticks_diff, ticks_ms
 
@@ -131,8 +134,6 @@ class Eye(Module):
         self.intensity = (sin(PULSE_FACTOR * abs(ticks_diff(ticks,self.eye_time))) + 1.2 )/ 2.2
         self.all_pixels(True)
 
-
-
     def rotating_eye(self, ticks):
         eye_percentage = abs(ticks_diff(self.eye_time, ticks)) / float(EYES_STEPTIME)
         if eye_percentage >= 1:
@@ -155,73 +156,10 @@ class ApiHandler:
         self.modules = modules
 
     def index(self):
-        return '''
-        <html><head><title>MantaControl</title></head>
-        <body>
-        <button onclick="call('left_eye')">Zwinker Links</button>
-        <button onclick="call('right_eye')">Zwinker Rechts</button>
-        <button onclick="call('strobo')">Strobo</button>
-        <button onclick="calibrate()" id="cannon_calibration_button">Calibrate cannon</button>
-        <input type="color" id="color"/>
-        <label><input type="checkbox" id="color_loop" onclick="handleClick(this)"/>Color loop</label>
-        <label><input type="checkbox" id="music" onclick="handleMusic(this)" checked/>Music</label>
-        <input type="range" min=0 max=4 step=0.02 id="range"/>
-        <p id="result">Press a button</p>
-        <script type="text/javascript">
-        var is_calibrating = false;
-
-        var range = document.getElementById("range");
-        range.addEventListener("change", function(event) {
-        if(document.getElementById("music").value)
-            call('gill_control', event.target.value);
-
-        }, false);
-        function handleClick(cb) {
-        call('color_loop', cb.checked ? 1 : 0);
-        }
-        function handleMusic(cb) {
-        if(cb.checked)
-            call('gill_control', -1);
-        else
-            call('gill_control', document.getElementById("range").value);
-        }
-        function calibrate() {
-        if(!is_calibrating) {
-            call('calibrate_start');
-            document.getElementById('cannon_calibration_button').innerText = 'Stop at 0 degrees';
-            is_calibrating = true;
-        } else {
-            document.getElementById('cannon_calibration_button').innerText = 'Stop at 0 degrees';
-            call('calibrate_stop');
-        
-        }
-
-        }
-
-        function call(operation, val) {
-        var xhttp = new XMLHttpRequest();
-        document.getElementById("result").innerHTML = "calling";
-        xhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-            document.getElementById("result").innerHTML = "done";
-            }
-        };
-        var path = "/api?operation=" + operation;
-        if(val) {
-         path += "&value=" + val;
-        }
-        xhttp.open("GET", path, true);
-        xhttp.send();
-        }
-        var cp = document.getElementById('color');
-        cp.addEventListener("change", function(event) {
-        call('color', event.target.value.substr(1));
-        }, false);
-
-        </script>
-        </body>
-        </html>
-        '''
+        f = open('index.html', 'r')
+        html = f.read()
+        f.close()
+        return html
 
     def get(self, api_request):
         print(api_request)
@@ -257,6 +195,8 @@ class ApiHandler:
             self.modules['cannon'].full_rotation()
         elif operation == 'calibrate_stop':
             self.modules['cannon'].calibration_finish()
+        elif operation == 'calibrate_compass':
+            self.modules['compass'].calibration()
 
 
 def init_modules():
@@ -267,7 +207,7 @@ def init_modules():
     gills = Gills([Gill(list(range(24, 69)), color=(0, 0, 20), intensity=1.0)], [Gill(list(range(71, 131)), color=(0, 0, 20), intensity=1.0)])  # treat all as lefties for now...
     cannon = Cannon()
 
-    return {'gills': gills, 'left_eye': left_eye, 'right_eye': right_eye, 'cannon': cannon}
+    return {'gills': gills, 'left_eye': left_eye, 'right_eye': right_eye, 'cannon': cannon, 'compass': Compass()}
 
 
 async def main(modules):
