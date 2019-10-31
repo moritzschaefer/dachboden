@@ -24,12 +24,11 @@ class Compass:
             }
         self.sensor = AK8963(self.i2c, offset=data['offset'], scale=data['scale'])
 
-    def step(self, _):
-        print("MPU9250 id: " + hex(self.sensor.whoami))
+    def get_angle(self):
+        return atan2(self.sensor.magnetic[1], self.sensor.magnetic[0])
 
-        print(atan2(self.sensor.magnetic[1], self.sensor.magnetic[0]))
-        # print(self.sensor.gyro)
-        # print(self.sensor.magnetic)
+    def step(self, _):
+        pass
 
     def calibration(self):
         print('Calibrating compass')

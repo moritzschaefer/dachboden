@@ -2,6 +2,8 @@
 This module controls the lasercannon on the back of the manta. The main objective is to use the laser as a pointer to the home base (using GPS)
 '''
 
+from math import pi
+
 from machine import Pin, Timer
 
 ROTATION_STEPS = 2048  # so many steps for one rotation
@@ -13,6 +15,7 @@ class Cannon:
         self.current_angle = self.load_cannon_angle()  # 0 is front. clockwise counting to 2048
         self.timer = Timer(-1)
         self.motor_state = 0
+        self.is_calibrating = False
 
         self.motor_pins = [Pin(pin, Pin.OUT) for pin in [12, 14, 27, 26]]
         for i in range(4):
@@ -37,6 +40,7 @@ class Cannon:
         self.target_angle = self.current_angle - 1
         self.clockwise = True
         self.timer.init(mode=Timer.PERIODIC, callback=self.timer_event, period=2)
+        self.is_calibrating = True
 
     def calibration_finish(self):
         '''
@@ -45,8 +49,13 @@ class Cannon:
         self.timer.deinit()
         self.motor_pins[self.motor_state].value(0)
         self.current_angle = 0
+        self.is_calibrating = False
 
-    def rotate_to(self, angle):
+    def rotate_to(self, radians):
+        '''
+        Use radians to set motor position
+        '''
+        angle = int((radians / pi) * ROTATION_STEPS) % ROTATION_STEPS
         self.timer.deinit()
         self.target_angle = angle
         self.clockwise = ((self.target_angle - self.current_angle) % ROTATION_STEPS) < (ROTATION_STEPS / 2)
@@ -54,7 +63,6 @@ class Cannon:
 
     def timer_event(self, t):
         self.motor_pins[self.motor_state].value(0)
-        print(self.current_angle, self.target_angle)
         if self.current_angle == self.target_angle:
             # TODO: finish with motor state 0?
             self.timer.deinit()

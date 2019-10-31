@@ -218,6 +218,10 @@ async def main(modules):
 
         modules['gills'].update_intensities(intensity)
 
+        if not modules['cannon'].is_calibrating:
+            compass_angle = modules['compass'].get_angle()
+            modules['cannon'].rotate_to(compass_angle)
+
         ticks = ticks_ms()
 
         for module in modules.values():
