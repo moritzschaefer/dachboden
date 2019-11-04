@@ -3,6 +3,9 @@
 #include <WiFiManager.h>
 #include <NeoPixelBus.h>
 
+// OTA
+#include <ArduinoOTA.h>
+
 #define UNIVERSE_COUNT 1
 
 int g_dmx_universe = 5;
@@ -17,20 +20,17 @@ unsigned long g_last_dmx_received = 0;
 bool g_strip_dirty = false;
 bool g_instastrobe_disabled = false;
 bool g_instastrobe_pressed = false;
+bool g_standalone = false;
 
 unsigned long g_cur_time = 0;
 
-// the number of the LED pin
+// Pin setup
 const int led1Pin = 16;  // 16 corresponds to GPIO16
 const int led2Pin = 4;   // 4 corresponds to GPIO4
 const int led3Pin = 17;  // 17 corresponds to GPIO17
-
 const int g_strip_pin = 5;
 const int g_mode_pin = 2;
-bool      g_standalone = false;
-
 const int g_instastrobe_pin = 0;
-
 
 // setting PWM properties
 const int freq = 500;
@@ -39,6 +39,7 @@ const int led2Channel = 1;
 const int led3Channel = 2;
 const int resolution = 8;
 const int max_brightness = 255;
+
 int g_num_strip_leds = 8;
 RgbColor g_strip_color;
 RgbColor red(255, 0, 0);
@@ -129,6 +130,51 @@ void setup() {
   g_blink_begin_time = millis();
   
   WiFi.setSleep(false);
+
+  /* Set up OTA updates. */
+  // Port defaults to 8266
+  // ArduinoOTA.setPort(8266);
+
+  // Hostname defaults to esp8266-[ChipID]
+  ArduinoOTA.setHostname("Stroboter");
+
+  // No authentication by default
+  ArduinoOTA.setPassword("incubator");
+
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH) {
+      type = "sketch";
+    } else { // U_SPIFFS
+      type = "filesystem";
+    }
+    SPIFFS.end();
+
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) {
+      Serial.println("Auth Failed");
+    } else if (error == OTA_BEGIN_ERROR) {
+      Serial.println("Begin Failed");
+    } else if (error == OTA_CONNECT_ERROR) {
+      Serial.println("Connect Failed");
+    } else if (error == OTA_RECEIVE_ERROR) {
+      Serial.println("Receive Failed");
+    } else if (error == OTA_END_ERROR) {
+      Serial.println("End Failed");
+    }
+  });
+  ArduinoOTA.begin();
+  Serial.println("Stroboter ready to party!");
 }
 
 void blink(int count)
@@ -209,13 +255,13 @@ void update_leds()
 
   if (g_blinkfreq > 0)
   {
-    if (g_cur_time % g_blink_begin_time > g_blinktime_real)
+    if (g_cur_time - g_blink_begin_time > g_blinktime_real)
     /* if ((g_cur_time - g_blink_begin_time) > g_blinktime_real) */
     {
       brightness = 0;
     }
     Serial.println("strobing");
-    if (g_cur_time % g_blink_begin_time > (1000.0f / g_blinkfreq))
+    if (g_cur_time - g_blink_begin_time > (1000.0f / g_blinkfreq))
     /* if ((g_cur_time - g_blink_begin_time) > (1000.0f / g_blinkfreq)) */
     {
       g_blink_begin_time = g_cur_time;
@@ -239,6 +285,7 @@ void update_leds()
 
 void loop() 
 {
+  ArduinoOTA.handle();
   g_cur_time = millis();
 
   // Handle instant strobe push button first ...
@@ -304,7 +351,7 @@ void loop()
   {
     /* In DMX mode we should receive packets regularly. If we don't, 
        there could be connectivity issues, so we restart */
-    if (g_cur_time % g_last_dmx_received > 60000)
+    if (g_cur_time - g_last_dmx_received > 60000)
     {
       Serial.println("Restarting because we did not receive a DMX Packet in some time.");
       ESP.restart();
