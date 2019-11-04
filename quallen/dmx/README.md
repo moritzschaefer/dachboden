@@ -16,12 +16,15 @@ Ethernet. Works with QLC+.
 # Hints
 
 * Each qualle has 6 channels:
-  1. Dimmer
-  2. Red value
-  3. Green value
-  4. Blue value
-  5. Strobe frequency (0-25 Hz, 0 means on)
-  6. Strobe on duration (0-255 ms)
+
+| Channel       | Function      | 
+| ------------- |:-------------:|
+| 1  | Dimmer |
+| 2  | Red value |
+| 3  | Green value |
+| 4  | Blue value |
+| 5  | Strobe frequency (0-25 Hz, 0 means on)
+| 6  | Strobe on duration (0-255 ms) |
 
 * quallen go to GPIO 5 on esp32 and RX on esp8266 (when you set a different pin 
 it is ignored on esp8266).
@@ -35,5 +38,5 @@ Should automatically run on first boot or when no wifi available.
 
 # TODO
 
-* OTA Updates
+* ~~OTA Updates~~
 * Trigger web config without the need to connect some pin to ground
