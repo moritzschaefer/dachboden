@@ -14,7 +14,7 @@ flash_esp32:
 	esptool.py --chip esp32 --port /dev/ttyUSB0 erase_flash
 	esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 write_flash -z 0x1000 esp32-idf3-20190529-v1.11.bin
 
-flash_esp8266: 
+flash_esp8266:
 	wget "http://micropython.org/resources/firmware/esp8266-20190529-v1.11.bin"
 	esptool.py --chip esp8266 --port /dev/ttyUSB0 erase_flash
 	esptool.py --port /dev/ttyUSB0 --baud 460800 write_flash --flash_size=detect 0 esp8266-20190529-v1.11.bin
