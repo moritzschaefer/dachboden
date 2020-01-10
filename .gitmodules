@@ -4,3 +4,7 @@
 [submodule "kickercam"]
 	path = kickercam
 	url = git@github.com:moritzschaefer/kickercam.git
+[submodule "clock_jockey/firmware"]
+	path = clock_jockey/firmware
+	url = https://git.cuvoodoo.info/stm32f1
+	branch = clock_jockey
