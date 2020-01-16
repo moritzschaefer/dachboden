@@ -1,0 +1,8 @@
+this clock jockey monitors the tachometer of a motor turning a clock, and regulates its speed by switching the power to it.
+
+to get more details about the project, checkout out the firmware:
+git submodule init
+git submodule update
+
+and have a look firmware/README.md
+
