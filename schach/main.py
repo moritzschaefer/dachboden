@@ -21,6 +21,13 @@ import ambiente
 # ...
 
 DATA_PIN = 14
+
+#TOUCHPINS 0,2,4,12,13,14,15,27,32,33
+PINWHITE = 12
+PINBLACK = 13
+PINMODE = 15
+SENSITIVITY = 600
+THRESHHOLD = 30
 PIXELS = 97
 MAX_ROTATIONS = 20
 INTENSITY = 0.1
@@ -62,6 +69,8 @@ class Chess:
         self.game_time = [self.player_time,self.player_time]
         self.web_time = [self.player_time,self.player_time]
 
+        self.game_modus = 0
+
     def get_lights(self):
         return self.board
 
@@ -100,6 +109,11 @@ class Chess:
         self.game_time[self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
         self.mode = "pause"
 
+    def pause_or_play(self):
+        if self.mode == "pause":
+            self.start()
+        else:
+            self.pause()
 
     def start(self):
         self.time = utime.ticks_ms()
@@ -107,6 +121,7 @@ class Chess:
         self.sender.send(self.board)
         self.time_progress = 0
         self.mode = "live"
+
 
     def step(self):
         time_diff = abs(utime.ticks_diff(utime.ticks_ms(), self.time))
@@ -150,7 +165,7 @@ class Chess:
             self.board[self.light + self.player * self.pixel_per_player[0]] = (self.player_colors[self.player][0],
                                                                                self.player_colors[self.player][1], 150)
 
-            board_copy = self.board.copy()
+            #board_copy = self.board.copy()
 
             self.sender.send(self.board)
 
@@ -163,6 +178,16 @@ class Chess:
         self.sender.send(self.board)
         self.Counter += 1
 
+
+    def loop_modus(self):
+        pass
+        #3min 3s Increment
+
+        #5min 5s Increment
+
+        #10min 5s Increment
+
+        #1min 1s Increment
 
     def time_out(self, player):
         for i in range(20):
@@ -180,15 +205,56 @@ class Sender():
             self.neop[i] = pixel_values[i]
         self.neop.write()
 
+class OnboardControl():
+    def __init__(self):
 
+        self.black = machine.TouchPad(machine.Pin(PINBLACK))
+        self.white = machine.TouchPad(machine.Pin(PINWHITE))
+        self.mode = machine.TouchPad(machine.Pin(PINMODE))
 
-async def main(chess):
+        self.black.config(SENSITIVITY)
+        self.white.config(SENSITIVITY)
+        self.mode.config(SENSITIVITY)
+
+        self.b = 0
+        self.w = 0
+        self.m = 0
+
+        self.last_pause_time = utime.ticks_ms()
+    def step(self, chess):
+        b = self.black.read()# < THRESHHOLD
+        w = self.white.read()# < THRESHHOLD
+        m = self.white.read()# < THRESHHOLD
+        print("Reading B:", b, " W:", w, " M:",m)
+        if b and self.b and w and self.w and m and self.m:
+            chess.restart()
+
+        elif b and self.b and w and self.w:
+            if utime.ticks_diff(self.last_pause_time, utime.ticks_ms()) > 2000:
+                answer = "pause/continue"
+                chess.pause_or_play()
+                self.last_pause_time = utime.ticks_ms()
+
+        elif m and self.m:
+
+        elif b:
+            answer = "black_played"
+        elif w:
+            answer = "white played"
+        else:
+            answer = "nothing"
+        self.b = b
+        self.w = w
+        self.m = m
+
+        return answer
+
+async def main(chess, touchpins):
     #chess = Chess()
     while True:
+        TouchCommand = touchpins.step(chess)
         chess.step()
-
         await asyncio.sleep_ms(10)
-
 
 
 class ApiHandler:
@@ -251,9 +317,10 @@ class ApiHandler:
 
 if __name__ == "__main__":
     chess = Chess()
+    touchpins = Touchpin()
     api_handler = http_api_handler.Handler([([''], ApiHandler(chess))])
     loop = asyncio.get_event_loop()
-    loop.create_task(main(chess))
+    loop.create_task(main(chess, touchpins))
     server = uhttpd.Server([('/api', api_handler)])
     server.run()
 
