@@ -27,13 +27,13 @@ PINWHITE = 12
 PINBLACK = 13
 PINMODE = 15
 SENSITIVITY = 600
-THRESHHOLD = 30
-PIXELS = 97
+THRESHHOLD = 150
+PIXELS = 102
 MAX_ROTATIONS = 20
-INTENSITY = 0.1
+INTENSITY = 0.8
 
 class Chess:
-    player_colors=[(15,0,0),(0,15,0)]
+    player_colors=[(75,0,0),(0,75,0)]
 
     def __init__(self):
         pixel_w = int(PIXELS/2)
@@ -58,7 +58,7 @@ class Chess:
         print("One Startup finished")
 
         self.Counter = 0
-        self.ambiente = ambiente.Ambiente(self.sender)
+        self.ambiente = ambiente.Ambiente(self.sender, n_pixels=PIXELS)
         #self.mode = "ambiente"
 
         #self.mode = "live"
@@ -66,8 +66,8 @@ class Chess:
         self.time_progress = 0
 
         self.player_time = 60*1000*5
-        self.game_time = [self.player_time,self.player_time]
-        self.web_time = [self.player_time,self.player_time]
+        self.game_time = [self.player_time, self.player_time]
+        self.web_time = [self.player_time, self.player_time]
 
         self.game_modus = 0
 
@@ -75,16 +75,17 @@ class Chess:
         return self.board
 
 
-    def set_turn(self, player, time):
+    def set_turn(self, player, time=None):
         if player == "white":
             self.player = 0
         elif player == "black":
             self.player = 1
         else:
             print("Could not get the player turn")
-
+        self.mode = "live"
         self.game_time[not self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
-        self.web_time[self.player] = time
+        if time is not None:
+            self.web_time[self.player] = time
         self.board = [self.player_colors[self.player] for x in self.board]
         self.sender.send(self.board)
         self.time = utime.ticks_ms()
@@ -211,10 +212,10 @@ class OnboardControl():
         self.black = machine.TouchPad(machine.Pin(PINBLACK))
         self.white = machine.TouchPad(machine.Pin(PINWHITE))
         self.mode = machine.TouchPad(machine.Pin(PINMODE))
-
-        self.black.config(SENSITIVITY)
-        self.white.config(SENSITIVITY)
-        self.mode.config(SENSITIVITY)
+        print(PINMODE,PINWHITE,PINBLACK)
+        #self.black.config(SENSITIVITY)
+        #self.white.config(SENSITIVITY)
+        #self.mode.config(SENSITIVITY)
 
         self.b = 0
         self.w = 0
@@ -222,37 +223,46 @@ class OnboardControl():
 
         self.last_pause_time = utime.ticks_ms()
     def step(self, chess):
-        b = self.black.read()# < THRESHHOLD
-        w = self.white.read()# < THRESHHOLD
-        m = self.white.read()# < THRESHHOLD
-        print("Reading B:", b, " W:", w, " M:",m)
+        b = self.black.read() < THRESHHOLD
+        w = self.white.read() < THRESHHOLD
+        m = self.mode.read() < THRESHHOLD
+        #print("Reading B:", b, " W:", w, " M:",m)
         if b and self.b and w and self.w and m and self.m:
+            #print("Restart")
             chess.restart()
+            answer = "Restart"
 
         elif b and self.b and w and self.w:
-            if utime.ticks_diff(self.last_pause_time, utime.ticks_ms()) > 2000:
+            answer = "both"
+        elif b and self.b:
+            answer = "black_played"
+            chess.set_turn("white")
+        elif w and self.w:
+            answer = "white played"
+            chess.set_turn("black")
+        elif m and self.m:
+            if utime.ticks_diff(utime.ticks_ms(), self.last_pause_time) > 2000:
+                #print("pause")
                 answer = "pause/continue"
                 chess.pause_or_play()
                 self.last_pause_time = utime.ticks_ms()
-
-        elif m and self.m:
-
-        elif b:
-            answer = "black_played"
-        elif w:
-            answer = "white played"
+            else:
+                #print(utime.ticks_diff(self.last_pause_time, utime.ticks_ms()))
+                answer = "tried to pause"
+            #answer = "ModeButton"
         else:
-            answer = "nothing"
+            answer = "nothing"+str(b)+str(w)+str(m)
         self.b = b
         self.w = w
         self.m = m
 
         return answer
 
-async def main(chess, touchpins):
+async def main(chess, controller):
     #chess = Chess()
     while True:
-        TouchCommand = touchpins.step(chess)
+        TouchCommand = controller.step(chess)
+        print(TouchCommand)
         chess.step()
         await asyncio.sleep_ms(10)
 
@@ -317,12 +327,10 @@ class ApiHandler:
 
 if __name__ == "__main__":
     chess = Chess()
-    touchpins = Touchpin()
+    controller = OnboardControl()
     api_handler = http_api_handler.Handler([([''], ApiHandler(chess))])
     loop = asyncio.get_event_loop()
-    loop.create_task(main(chess, touchpins))
+    loop.create_task(main(chess, controller))
     server = uhttpd.Server([('/api', api_handler)])
     server.run()
-
-
 
