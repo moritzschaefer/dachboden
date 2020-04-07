@@ -12,7 +12,7 @@ import socket
 import ambiente
 #import stroboscope
 #import startup
-
+#import random
 # Channels: 151
 
 # 0 mode
@@ -58,8 +58,8 @@ class Chess:
         print("One Startup finished")
 
         self.Counter = 0
-        self.ambiente = ambiente.Ambiente(self.sender, n_pixels=PIXELS)
-        #self.mode = "ambiente"
+        if True: #random.randint(0,2)>=1:
+            self.ambiente = ambiente.Ambiente(self.sender, n_pixels=PIXELS)
 
         #self.mode = "live"
         self.mode = "pause"
@@ -127,7 +127,7 @@ class Chess:
     def step(self):
         time_diff = abs(utime.ticks_diff(utime.ticks_ms(), self.time))
         if self.mode == "ambiente":
-            self.ambiente.ambiente_step()
+            self.ambiente.step()
         elif self.mode == "live":
             if time_diff > self.web_time[self.player]: #Time has been running down
                 print("Time is out")
@@ -143,14 +143,14 @@ class Chess:
                 pass
 
         elif self.mode == "pause":
-            self.ambiente.ambiente_step()
+            self.ambiente.step()
         else:
             self.arcade_mode_step(time_diff)
 
 
     def arcade_mode_step(self, time_diff):
         if (self.Counter >= MAX_ROTATIONS):
-            self.ambiente.ambiente_step()
+            self.ambiente.step()
             return
         if time_diff > self.turn_time:
             self.player_restart()
