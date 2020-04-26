@@ -3,9 +3,15 @@ import math
 from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
 #import random
 
-PIN = 2
+PIN = 4
 NUM_PIXEL = 250
 MAX_ITENSITY = 160
+
+def test_pin(pin):
+    x = neopixel.NeoPixel(machine.Pin(pin), 100)
+    for i in range(100):
+        x[i] = (100,100,0)
+    x.write()
 
 class KreisAuge:
     def __init__(self):
