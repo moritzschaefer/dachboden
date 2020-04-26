@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BARSCHILD</title>
+  <style type="text/css">
+  body, html {
+    background:#003311;
+    color:#ffffff;
+    font-family: cursive;
+  }
+  /* Design der Buttons*/
+  /* Ausgangssituation der Buttons*/
+  .button {
+    /*background-color:#009900;*/
+    border:none;
+    color: white;
+    border-radius: 0.3125em;
+    padding-top: 2.5%;
+    padding-right: 2.5%;
+    padding-left: 2.5%;
+    padding-bottom: 2.5%;
+    text-align: center;
+    display: inline-block;
+    width: 30%;
+    font-size: 1em;
+    font-family: cursive;
+    margin: 0.625em 0.625em;
+    cursor: pointer;
+  }
+  .active {
+    background-color:#009900;
+  }
+  .inactive {
+    background-color:#990000;
+  }
+
+  </style>
+</head>
+
+</body>
+<body>
+  <!-- Die einzelnen Buttons-->
+
+  <h1><center>BARSCHILD<center></h1>
+    <h3><center>1.00 Euro Spendenbasis<center></h3>
+      <button onclick="colorChange('beer')" id="beer" class="button active">Bier
+      </button>
+      <button onclick="colorChange('shot')" id="shot" style="position: absolute;
+      right: 0;" class="button active">Shot
+      </button><br>
+      <h3><center>1.50 Euro Spendenbasis<center></h3>
+        <button onclick="colorChange('nonalcoholicBeer')" id="nonalcoholicBeer"
+        class="button active">
+          Alkoholfreies Bier</button>
+        <button onclick="colorChange('mate')" id="mate" style="position:
+        absolute; right: 0;" class="button active">Mate</button><br>
+        <button onclick="colorChange('radler')" id="radler" class="button active"
+        >Radler</button>
+        <button onclick="colorChange('spezi')" id="spezi" style="position:
+        absolute; right: 0;" class="button active">Spezi</button><br>
+        <button onclick="colorChange('fizz')" id="fizz" class="button active">
+          KoffeinfreieBrause</button>
+        <button onclick="colorChange('special')" id="special" style="position:
+        absolute; right: 0;" class="button active">Special</button><br>
+        <h3><center>2.50 Euro Spendenbasis<center></h3>
+          <button onclick="colorChange('cocktails')" id="cocktails"
+          class="button active">Diverse Cocktails</button><br>
+          <h3><center>Macht der Barkeeper mal wieder Pause?<center></h3>
+            <button onclick="colorChange('barkeeper')" id="barkeeper"
+            class="button active">Barkeeper</button><br>
+            <h3><center>Lass leuchten!<center></h3>
+              <button onclick="strobo()" id="strobo" class="button active">
+                Strobo</button>
+              <button onclick="chase()" id="chase" style="position: absolute;
+              right: 0;" class="button active">Chase</button><br>
+              <script>
+
+              function colorChange(drink) {
+                var e = document.getElementById(drink);
+                if (e.classList.contains("active")) {
+                  //console.log("if");
+                  e.classList.remove("active");
+                  e.classList.add("inactive");
+                  call('leer', drink, 'off');
+                }
+                else {
+                  e.classList.remove("inactive");
+                  e.classList.add("active");
+                  call('voll', drink, 'on');
+                  //console.log("else");
+                }
+              }
+              function strobo() {
+                //var e = document.getElementById(strobo);
+                //e.classList.remove("active");
+                //e.classList.add("inactive");
+                call('strobo');
+                //await Sleep(100);
+                //e.classList.add("active");
+                //e.classList.remove("inactive");
+
+              }
+              function chase() {
+                call('chase');
+              }
+
+              function call(operation, val) {
+                var xhttp = new XMLHttpRequest();
+                var path = "/api?operation=" + operation;
+                if(val) {
+                  path += "&value=" + val;
+                }
+                xhttp.open("GET", path, true);
+                xhttp.send();
+                console.log("GET request send: ", val);
+              }
+              </script>
+            </body>
+            </html>

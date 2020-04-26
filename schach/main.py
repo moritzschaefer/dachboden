@@ -12,7 +12,7 @@ import socket
 import ambiente
 #import stroboscope
 #import startup
-
+#import random
 # Channels: 151
 
 # 0 mode
@@ -21,12 +21,19 @@ import ambiente
 # ...
 
 DATA_PIN = 14
-PIXELS = 97
+
+#TOUCHPINS 0,2,4,12,13,14,15,27,32,33
+PINWHITE = 12
+PINBLACK = 13
+PINMODE = 15
+SENSITIVITY = 600
+THRESHHOLD = 150
+PIXELS = 102
 MAX_ROTATIONS = 20
-INTENSITY = 0.1
+INTENSITY = 0.8
 
 class Chess:
-    player_colors=[(15,0,0),(0,15,0)]
+    player_colors=[(75,0,0),(0,75,0)]
 
     def __init__(self):
         pixel_w = int(PIXELS/2)
@@ -51,31 +58,34 @@ class Chess:
         print("One Startup finished")
 
         self.Counter = 0
-        self.ambiente = ambiente.Ambiente(self.sender)
-        #self.mode = "ambiente"
+        if True: #random.randint(0,2)>=1:
+            self.ambiente = ambiente.Ambiente(self.sender, n_pixels=PIXELS)
 
         #self.mode = "live"
         self.mode = "pause"
         self.time_progress = 0
 
         self.player_time = 60*1000*5
-        self.game_time = [self.player_time,self.player_time]
-        self.web_time = [self.player_time,self.player_time]
+        self.game_time = [self.player_time, self.player_time]
+        self.web_time = [self.player_time, self.player_time]
+
+        self.game_modus = 0
 
     def get_lights(self):
         return self.board
 
 
-    def set_turn(self, player, time):
+    def set_turn(self, player, time=None):
         if player == "white":
             self.player = 0
         elif player == "black":
             self.player = 1
         else:
             print("Could not get the player turn")
-
+        self.mode = "live"
         self.game_time[not self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
-        self.web_time[self.player] = time
+        if time is not None:
+            self.web_time[self.player] = time
         self.board = [self.player_colors[self.player] for x in self.board]
         self.sender.send(self.board)
         self.time = utime.ticks_ms()
@@ -100,6 +110,11 @@ class Chess:
         self.game_time[self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
         self.mode = "pause"
 
+    def pause_or_play(self):
+        if self.mode == "pause":
+            self.start()
+        else:
+            self.pause()
 
     def start(self):
         self.time = utime.ticks_ms()
@@ -108,10 +123,11 @@ class Chess:
         self.time_progress = 0
         self.mode = "live"
 
+
     def step(self):
         time_diff = abs(utime.ticks_diff(utime.ticks_ms(), self.time))
         if self.mode == "ambiente":
-            self.ambiente.ambiente_step()
+            self.ambiente.step()
         elif self.mode == "live":
             if time_diff > self.web_time[self.player]: #Time has been running down
                 print("Time is out")
@@ -127,14 +143,14 @@ class Chess:
                 pass
 
         elif self.mode == "pause":
-            self.ambiente.ambiente_step()
+            self.ambiente.step()
         else:
             self.arcade_mode_step(time_diff)
 
 
     def arcade_mode_step(self, time_diff):
         if (self.Counter >= MAX_ROTATIONS):
-            self.ambiente.ambiente_step()
+            self.ambiente.step()
             return
         if time_diff > self.turn_time:
             self.player_restart()
@@ -150,7 +166,7 @@ class Chess:
             self.board[self.light + self.player * self.pixel_per_player[0]] = (self.player_colors[self.player][0],
                                                                                self.player_colors[self.player][1], 150)
 
-            board_copy = self.board.copy()
+            #board_copy = self.board.copy()
 
             self.sender.send(self.board)
 
@@ -163,6 +179,16 @@ class Chess:
         self.sender.send(self.board)
         self.Counter += 1
 
+
+    def loop_modus(self):
+        pass
+        #3min 3s Increment
+
+        #5min 5s Increment
+
+        #10min 5s Increment
+
+        #1min 1s Increment
 
     def time_out(self, player):
         for i in range(20):
@@ -180,15 +206,65 @@ class Sender():
             self.neop[i] = pixel_values[i]
         self.neop.write()
 
+class OnboardControl():
+    def __init__(self):
 
+        self.black = machine.TouchPad(machine.Pin(PINBLACK))
+        self.white = machine.TouchPad(machine.Pin(PINWHITE))
+        self.mode = machine.TouchPad(machine.Pin(PINMODE))
+        print(PINMODE,PINWHITE,PINBLACK)
+        #self.black.config(SENSITIVITY)
+        #self.white.config(SENSITIVITY)
+        #self.mode.config(SENSITIVITY)
 
-async def main(chess):
+        self.b = 0
+        self.w = 0
+        self.m = 0
+
+        self.last_pause_time = utime.ticks_ms()
+    def step(self, chess):
+        b = self.black.read() < THRESHHOLD
+        w = self.white.read() < THRESHHOLD
+        m = self.mode.read() < THRESHHOLD
+        #print("Reading B:", b, " W:", w, " M:",m)
+        if b and self.b and w and self.w and m and self.m:
+            #print("Restart")
+            chess.restart()
+            answer = "Restart"
+
+        elif b and self.b and w and self.w:
+            answer = "both"
+        elif b and self.b:
+            answer = "black_played"
+            chess.set_turn("white")
+        elif w and self.w:
+            answer = "white played"
+            chess.set_turn("black")
+        elif m and self.m:
+            if utime.ticks_diff(utime.ticks_ms(), self.last_pause_time) > 2000:
+                #print("pause")
+                answer = "pause/continue"
+                chess.pause_or_play()
+                self.last_pause_time = utime.ticks_ms()
+            else:
+                #print(utime.ticks_diff(self.last_pause_time, utime.ticks_ms()))
+                answer = "tried to pause"
+            #answer = "ModeButton"
+        else:
+            answer = "nothing"+str(b)+str(w)+str(m)
+        self.b = b
+        self.w = w
+        self.m = m
+
+        return answer
+
+async def main(chess, controller):
     #chess = Chess()
     while True:
+        TouchCommand = controller.step(chess)
+        print(TouchCommand)
         chess.step()
-
         await asyncio.sleep_ms(10)
-
 
 
 class ApiHandler:
@@ -251,11 +327,10 @@ class ApiHandler:
 
 if __name__ == "__main__":
     chess = Chess()
+    controller = OnboardControl()
     api_handler = http_api_handler.Handler([([''], ApiHandler(chess))])
     loop = asyncio.get_event_loop()
-    loop.create_task(main(chess))
+    loop.create_task(main(chess, controller))
     server = uhttpd.Server([('/api', api_handler)])
     server.run()
-
-
 

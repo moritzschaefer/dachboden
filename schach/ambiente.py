@@ -1,7 +1,7 @@
 import main
 import random
 import utime
-
+MAX_INTENSITY = 160
 class Ambiente:
 
     def __init__(self, sender, n_pixels=97):
@@ -16,7 +16,7 @@ class Ambiente:
         self.counter = 0
         self.moving_slides_init(width = self.mid)
         self.sender.send(self.pixels)
-    def ambiente_step(self):
+    def step(self):
 
         if random.randint(0,100) < -1:
             self.crazy_swap()
@@ -71,6 +71,5 @@ class Ambiente:
             self.slide_dir = (self.slide_dir + 1) % 2
             if random.randint(0, 100) < 10:
                 self.moving_slides_init(random.randint(8,self.mid))
-
 
 
