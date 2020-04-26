@@ -230,11 +230,11 @@ class ApiHandler:
         <button onclick="call('left_eye')">Zwinker Links</button>
         <button onclick="call('right_eye')">Zwinker Rechts</button>
         <button onclick="call('strobo')">Strobo</button>        
-        <input type="color" id="color"/>
-        <label><input type="checkbox" id="color_loop" onclick="handleClick(this)"/>Color loop</label>
-        <label><input type="checkbox" id="music" onclick="handleMusic(this)" checked/>Music</label>
-        <input type="range" min=0 max=4 step=0.02 id="range"/>
-        <p id="result">Press a button</p>
+        <input type="color" step_i="color"/>
+        <label><input type="checkbox" step_i="color_loop" onclick="handleClick(this)"/>Color loop</label>
+        <label><input type="checkbox" step_i="music" onclick="handleMusic(this)" checked/>Music</label>
+        <input type="range" min=0 max=4 step=0.02 step_i="range"/>
+        <p step_i="result">Press a button</p>
         <script type="text/javascript">
         var range = document.getElementById("range");
         range.addEventListener("change", function(event) {

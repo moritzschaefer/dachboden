@@ -110,7 +110,7 @@ class ArcadeKicker():
 
         self.stripes = [self.start_value for i in range(PIXELS)]
 
-        gc.collect()
+        gc.collect()5
 
     def start_sequence(self):
         self.stripes = [(0,0,0) for i in range(PIXELS)]
