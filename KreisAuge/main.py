@@ -1,11 +1,23 @@
 import machine, neopixel
 import math
 from utime import ticks_diff, ticks_ms, ticks_add, sleep_ms
-#import random
+import urandom
 
 PIN = 4
 NUM_PIXEL = 250
 MAX_ITENSITY = 160
+V_MIN = -10
+V_MAX = 10
+MAX_ZEIGER = 200
+MIN_ZEIGER = 1
+
+
+def randint(min, max):
+    span = max - min + 1
+    div = 0x3fffffff // span
+    offset = urandom.getrandbits(30) // div
+    val = min + offset
+    return val
 
 def test_pin(pin):
     x = neopixel.NeoPixel(machine.Pin(pin), 100)
@@ -28,20 +40,69 @@ class KreisAuge:
         self.step_time = 100
         self.last_step = ticks_ms()
 
+        self.n = 20
+        self.zeiger_pos = [i * NUM_PIXEL // self.n for i in range(self.n)]
+        self.zeiger_v = [randint(V_MIN, V_MAX) for _ in range(self.n)]
+        for i in range(len(self.zeiger_v)):
+            if self.zeiger_v[i] == 0:
+                self.zeiger_v[i] = 1
+        self.zeiger_color = [hsv_to_rgb(randint(0,360), 1, 1) for _i in range(self.n)]
+        self.zeiger_counter = [0 for _ in range(self.n)]
 
     def step(self, ticks):
-        if abs(ticks_diff(self.last_step,ticks)) > self.step_time:
-            self.start_h = (self.start_h +1) % 360
-            for i in range(NUM_PIXEL):
-                r, g, b = hsv_to_rgb(int(self.start_h + i * (360. / NUM_PIXEL)) % 360, 1, 1)
-                self.np[i] = (r, g, b)
-            self.change = True
+        for i in range(self.n):
+            if self.zeiger_v[i] == 0:
+                continue
+            self.zeiger_counter[i] = (self.zeiger_counter[i] + 1 ) % abs(self.zeiger_v[i])
+            if self.zeiger_counter[i] == 0:
+                self.zeiger_pos[i] = (self.zeiger_pos[i] + 1) % NUM_PIXEL if self.zeiger_v[i] > 0 else (self.zeiger_pos[i] - 1) % NUM_PIXEL
+        for i in range(NUM_PIXEL):
+            self.np[i] = (0,0,0)
 
-        if self.change:
-            self.np.write()
-            self.change = False
+        i = 0
+        while i < self.n:
+            if i >= len(self.zeiger_pos):
+                print("Should never happen, but who knows")
+                break
+            if sum(self.np[self.zeiger_pos[i]]) > 0:
+                if randint(0,10) >= 9: #Check, if we want to add or remove a Zeiger
+                    urandom_event = randint(MIN_ZEIGER, MAX_ZEIGER)
+                    if urandom_event > self.n: #Adding
+                        self.add_zeiger(pos=self.zeiger_pos[i])
+                    elif urandom_event < self.n: # Removing
+                        self.remove_zeiger(i)
+                        continue
+            else:
+                self.np[self.zeiger_pos[i]] = self.zeiger_color[i]
+            i += 1
+        self.np.write()
 
+    def add_zeiger(self, pos=None, v=None):
+        if len(self.zeiger_pos) < MAX_ZEIGER:
+            if pos:
+                self.zeiger_pos.append(pos)
+            else:
+                self.zeiger_pos.append(randint(0, NUM_PIXEL))
+            if v:
+                self.zeiger_v.append(v)
+            else:
+                new_v = randint(V_MIN,V_MAX)
+                if new_v == 0:
+                    new_v = 1
+                self.zeiger_v.append(new_v)
+            self.zeiger_color.append(hsv_to_rgb(randint(0,360), 1, 1))
+            self.zeiger_counter.append(0)
+            self.n = len(self.zeiger_pos)
 
+    def remove_zeiger(self, idx=-1):
+        if len(self.zeiger_pos) > MIN_ZEIGER:
+            if idx < 0 or idx > len(self.zeiger_pos):
+                idx = randint(0,len(self.zeiger_pos))
+            self.zeiger_pos.pop(idx)
+            self.zeiger_v.pop(idx)
+            self.zeiger_color.pop(idx)
+            self.zeiger_counter.pop(idx)
+            self.n = len(self.zeiger_pos)
 
 def hsv_to_rgb(h,s,v):
     h60 = h / 60.0
@@ -70,7 +131,7 @@ def main(ka):
     while True:
 
         ticks = ticks_ms()
-
+        sleep_ms(20)
         ka.step(ticks)
 
 
