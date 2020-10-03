@@ -19,7 +19,7 @@ export DACHKULTUR_CHAT_ID=""
 
 ## Running the app
 
-To start in the background
+To start in the foreground
 ```sh
 python3 dachrobot.py
 ```
