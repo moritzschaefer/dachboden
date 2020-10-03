@@ -41,7 +41,6 @@ def tell(update, context):
     event.guests = {}
 
     if event.limited == True:
-
         message = update.message.bot.send_message(chat_id=event.chat_id, text=update.message.text + '\n\nTickets for this event: ' +
                                                   str(event.maxTickets) + '\nTickets still available: ' + str(event.maxTickets - sum(event.guests.values())))
         update.message.bot.pin_chat_message(chat_id=event.chat_id,
