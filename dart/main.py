@@ -1,15 +1,20 @@
 import requests
 import time
-URL =  'https://www.w3schools.com/python/demopage.php'
+URL =  "http://fluepdot/framebuffer/text?x=0&y=0&font=DejaVuSans12bw_bwfont"
+#URL =  "http://fluepdot/framebuffer/text?x=0&y=0&font=fixed_7x14"
+spaced_URL = lambda space : "http://fluepdot/framebuffer/text?x={}&y=0&font=DejaVuSans12bw_bwfont".format(space)
 
-def send_string(s):
-    print("Gesendet {}".format(s))
-    return
-    myobj = {"value": s}
-    x = requests.post(URL, data = myobj)
-    print(x.text)
-    if x.status_code == 200:
-        print("Sucess")
+def send_string(s, space=0):
+    try:
+        x = requests.post(spaced_URL(space), data=s, timeout=10)
+
+        #print(x.text)
+        #if x.status_code == 200:
+        #    print("Sucess")
+        return 1
+    except:
+        print("Fail")
+        return -1
 
 class Dart:
     def __init__(self):
@@ -23,7 +28,7 @@ class Dart:
     def start(self):
 
         while True:
-            send_string("Wieviele Spieler?")
+            send_string("Wieviele Spieler ?")
             try:
                 n_player = int(input())
                 if n_player > 5:
@@ -35,7 +40,7 @@ class Dart:
                     time.sleep(4)
                     continue
                 else:
-                    send_string("Wieviel Punkte?")
+                    send_string("Wieviel Punkte ?")
                     start_points = int(input())
                     if start_points <1:
                         send_string("Min 1 Punkt")
@@ -48,7 +53,7 @@ class Dart:
                         self.cur_player = 0
                         self.cur_throw = 0
                         self.state = "Play"
-                        send_string("S{} Starts".format(self.cur_player))
+                        send_string("S{} startet: {}".format(self.cur_player,self.points[self.cur_player]))
                         return self.cur_player
             except:
                 send_string("Bitte neu versuchen")
@@ -84,13 +89,14 @@ class Dart:
         if next_player == 0 and any([p==0 for p in self.points]):
             winners = [i for i,x in enumerate(self.points) if x == 0]
             if len(winners) > 1:
-                send_string("Spieler {} Siegen".format(winners))
+                send_string("Sieger: {}".format(winners))
             else:
                 send_string("Spieler {} Siegt".format(winners[0]))
             self.state = "Sieger"
             return -1
 
-        send_string("S{}: {} Next S{}: {}".format(self.cur_player, self.points[self.cur_player],next_player, self.points[next_player]))
+        spacing = (3 - len(str(self.points[self.cur_player])))*10
+        send_string("S{}: {} | S{}: {}".format(self.cur_player, self.points[self.cur_player],next_player, self.points[next_player]),spacing)
 
         self.cur_player = next_player
         return self.cur_player
@@ -101,7 +107,7 @@ class Dart:
             assert(w >= 0 and w <= 180)
 
         except:
-            send_string("Eingabe Ungültig")
+            #send_string("Eingabe Ungültig")
             w = -1
         return w
 
