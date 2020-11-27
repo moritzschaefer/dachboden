@@ -32,3 +32,12 @@ modifications:
 - all lines are paths (instead of polygons), more adapted for sewing machines
 - use 2 lines instead of 4 for the head, allowing wider sewing lines
 - adjust object positions so they don't overlap
+
+tuerschild
+==========
+
+this are the drawings laser engraved in the wood planks mounted on the entry door frame.
+
+fonts used:
+
+- [Terminator Real NFI](https://www.dafont.com/terminator-real-nfi.font)
