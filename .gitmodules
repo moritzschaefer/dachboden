@@ -8,3 +8,7 @@
 	path = clock_jockey/firmware
 	url = https://git.cuvoodoo.info/stm32f1
 	branch = clock_jockey
+[submodule "klo-assistant"]
+	path = klo-assistant
+	url = https://git.cuvoodoo.info/stm32f1
+	branch = klo-assistant
