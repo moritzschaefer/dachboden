@@ -1,86 +1,75 @@
 import requests
 import time
 import serial
-URL =  "http://fluepdot/framebuffer/text?x=0&y=0&font=DejaVuSans12bw_bwfont"
-#URL =  "http://fluepdot/framebuffer/text?x=0&y=0&font=fixed_7x14"
-spaced_URL = lambda space : "http://fluepdot/framebuffer/text?x={}&y=0&font=DejaVuSans12bw_bwfont".format(space)
 
-def send_string(s):
-    with serial.Serial('/dev/ttyUSB0', 115200) as ser:
-        text = 'render_font "{}"\r\n'.format(s)
+spaced_URL = lambda space: f"http://fluepdot/framebuffer/text?x={space}&y=0&font=DejaVuSans12bw_bwfont"
+
+def send_string_serial(string):
+    with serial.Serial("/dev/ttyUSB0", 115200) as ser:
+        text = f'render_font "{string}"\r\n'
         ser.write(text.encode())
+    return string
 
-def send_string2(s, space=0):
-    try:
-        x = requests.post(spaced_URL(space), data=s, timeout=6)
-
-        #print(x.text)
-        #if x.status_code == 200:
-        #    print("Sucess")
-        return 1
-    except:
-        print("Fail")
-        return -1
-
-#sudo chown 666 /dev/ttyUSB0
-#sudo docker run -d --name fluepdot --device /dev/ttyUSB0:/fluepdot-device:rwm
-#sudo docker exec -it -w "/fluepdot/software/firmware" -e ESPTOOL_PORT='/fluepdot-device' -e ESPTOOL_BAUD='480000' fluepdot make flash
 
 class Dart:
     def __init__(self):
-        self.n_player = 2
+        self.player_count = 2
         self.state = "START"
-        self.start_point = 301
-        self.cur_player = 0
-        self.cur_throw = 0
+        self.start_points = 301
+        self.current_player = 0
+        self.current_throw = 0
         self.points = []
 
     def start(self):
-
         while True:
-            send_string("Wieviele Spieler ?")
+            send_string_serial("Wie viele Spieler?")
             try:
-                n_player = int(input())
-                if n_player > 5:
-                    send_string("Max 5 Spieler")
+                player_count = int(input())
+                if player_count > 5:
+                    send_string_serial("Max. 5 Spieler")
                     time.sleep(4)
                     continue
-                elif n_player < 1:
-                    send_string("Min 1 Spieler")
+                elif player_count < 1:
+                    send_string_serial("Min. 1 Spieler")
                     time.sleep(4)
                     continue
                 else:
-                    send_string("Wieviel Punkte ?")
+                    send_string_serial("Wie viele Punkte?")
                     start_points = int(input())
-                    if start_points <1:
-                        send_string("Min 1 Punkt")
+                    if start_points < 1:
+                        send_string_serial("Min. 1 Punkt")
                         time.sleep(4)
                         continue
                     else:
-                        self.n_player = n_player
-                        self.start_point = start_points
-                        self.points = [self.start_point for i in range(self.n_player)]
-                        self.cur_player = 0
-                        self.cur_throw = 0
+                        self.player_count = player_count
+                        self.start_points = start_points
+                        self.points = [
+                            self.start_points for i in range(self.player_count)
+                        ]
+                        self.current_player = 0
+                        self.current_throw = 0
                         self.state = "Play"
-                        send_string("S{} startet: {}".format(self.cur_player+1,self.points[self.cur_player]))
-                        return self.cur_player
+                        send_string_serial(
+                            f"S{self.current_player + 1} startet: {self.points[self.current_player]}"
+                        )
+                        return self.current_player
             except:
-                send_string("Bitte neu versuchen")
+                send_string_serial("Bitte neu versuchen")
 
     def play(self):
-        #send_string("Spieler {} wirft".format(self.cur_player))
-        string = "S{} {}".format(self.cur_player+1, self.points[self.cur_player])
-        #send_string(string)
-        w = [0,0,0]
+        string = f"S{self.current_player + 1} {self.points[self.current_player]}"
+
+        throw_points = [0, 0, 0]
         i = 0
-        #Waiting to input 3 Throws
+
+        # Waiting to input 3 throws
         while i < 3:
-            w[i] = self.get_wurf()
-            if w[i] >= 0:
-                string = string + "-{}".format(w[i])
-                send_string(string)
-                i +=1
+            throw_points[i] = self.get_wurf()
+
+            if throw_points[i] >= 0:
+                string = string + f"-{throw_points[i]}"
+                send_string_serial(string)
+                i += 1
 
         try:
             confirm = input()
@@ -88,38 +77,39 @@ class Dart:
             confirm = "-"
 
         if "-" in confirm:
-            send_string("S{} Neu eingeben".format(self.cur_player+1))
-            return self.cur_player
+            send_string_serial(f"S{self.current_player + 1} neu eingeben")
+            return self.current_player
 
-        #Substracting thrown points
-        if self.points[self.cur_player] - sum(w) >= 0:
-            self.points[self.cur_player] -= sum(w)
+        # Substract thrown points
+        if self.points[self.current_player] - sum(throw_points) >= 0:
+            self.points[self.current_player] -= sum(throw_points)
 
-        next_player = (self.cur_player +1) % self.n_player
-        if next_player == 0 and any([p==0 for p in self.points]):
-            winners = [i+1 for i,x in enumerate(self.points) if x == 0]
+        next_player = (self.current_player + 1) % self.player_count
+
+        # Check whether the game is over
+        if next_player == 0 and any([p == 0 for p in self.points]):
+            winners = [i for i, x in enumerate(self.points) if x == 0]
             if len(winners) > 1:
-                send_string("Sieger: {}".format(winners))
+                send_string_serial(f"Sieger: {list(map(lambda i: i + 1, winners))}")
             else:
-                send_string("Spieler {} Siegt".format(winners[0]+1))
+                send_string_serial(f"Spieler {winners[0] + 1} siegt")
             self.state = "Sieger"
             return -1
 
-        spacing = (3 - len(str(self.points[self.cur_player])))*10
-        send_string("S{}: {} | S{}: {}".format(self.cur_player+1, self.points[self.cur_player],next_player+1, self.points[next_player]),spacing)
+        send_string_serial(
+            f"S{self.current_player + 1}: {self.points[self.current_player]} | S{next_player + 1}: {self.points[next_player]}"
+        )
 
-        self.cur_player = next_player
-        return self.cur_player
+        self.current_player = next_player
+        return self.current_player
 
     def get_wurf(self):
         try:
-            w = int(eval(input()))
-            assert(w >= 0 and w <= 180)
-
+            throw_point = int(eval(input()))
+            assert throw_point >= 0 and throw_point <= 180
         except:
-            #send_string("Eingabe Ungültig")
-            w = -1
-        return w
+            throw_point = -1
+        return throw_point
 
 
 def main():
@@ -127,5 +117,6 @@ def main():
     status = d.start()
     while status >= 0:
         status = d.play()
+
 
 main()
