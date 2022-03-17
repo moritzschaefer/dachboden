@@ -70,7 +70,7 @@ def moving_areas(sender, board,  n_moves = 10, area_width=None, n_areas = None, 
     piercer = [bool(random.randint(0,2)) for i in range(n_areas)]
     move_times = [random.randint(100,500) for i in range(n_areas)]
     pos = [random.randint(0,viewed_pixels) for i in range(n_areas)]
-    times = [utime.ticks_ms for i in range(n_areas)]
+    times = [utime.ticks_ms() for i in range(n_areas)]
     counts = [0 for i in range(n_areas)]
     directions = [random.choice([-1,1]) for i in range(n_areas)]
 
@@ -80,6 +80,7 @@ def moving_areas(sender, board,  n_moves = 10, area_width=None, n_areas = None, 
             r_a, g_a, b_a = color[i]
             board[pos[i] + j] =(min(200,r+r_a),min(200,g+g_a),min(200,b+b_a))
     sender.send(board)
+    
     while(all([x < n_moves for x in counts])):
         changes = False
         for i in range(n_areas):
