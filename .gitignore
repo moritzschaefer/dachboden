@@ -1,2 +1,3 @@
 *.pyc 
 .transfered
+.DS_Store
