@@ -204,9 +204,12 @@ def connect_to_Wlan():
     import network
     sta_if = network.WLAN(network.STA_IF)
     sta_if.active(True)
-    sta_if.connect('dachboden', 'epicattic')
+    sta_if.connect('dachboden', 'epicattic', timeout=5000)
 def main():
-    connect_to_Wlan()
+    try:
+        connect_to_Wlan()
+    except:
+        print("Could not connect to WLAN")
     arcadekicker = ArcadeKicker()
     #for i in range(9):
     #    arcadekicker.select_random_special(i)
