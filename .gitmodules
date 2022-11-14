@@ -12,3 +12,6 @@
 	path = klo-assistant
 	url = https://git.cuvoodoo.info/stm32f1
 	branch = klo-assistant
+[submodule "masterqualle"]
+	path = masterqualle
+	url = https://github.com/AsinoEsel/masterqualle
