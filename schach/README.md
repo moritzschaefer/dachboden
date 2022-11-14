@@ -2,10 +2,12 @@
 
 Move async to esp
 async http soket.
-IP websocket 192.168.178.4
+IP websocket 192.168.1.22
 
 # Website:
 
+
+  Requirements: https://github.com/fadushin/esp8266/tree/master/micropython/uhttpd
   Two time fields as buttons
   Send two signals
   TODO learn how to display live changing time

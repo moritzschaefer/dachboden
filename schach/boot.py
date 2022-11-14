@@ -11,7 +11,7 @@ ap_if = network.WLAN(network.AP_IF)
 if not sta_if.isconnected():
     print('connecting to network...')
     sta_if.active(True)
-    sta_if.connect('Incubator', 'Fl4mongo')
+    sta_if.connect('dachboden', 'epicattic')
     i = 0
     while not sta_if.isconnected():
         sleep_ms(10)

@@ -20,12 +20,12 @@ import ambiente
 # 4,5,6 RGB Pixel 1
 # ...
 
-DATA_PIN = 14
+DATA_PIN = 4
 
 #TOUCHPINS 0,2,4,12,13,14,15,27,32,33
-PINWHITE = 12
+PINWHITE = 14
 PINBLACK = 13
-PINMODE = 15
+PINMODE = 32
 SENSITIVITY = 600
 THRESHHOLD = 150
 PIXELS = 102
@@ -105,6 +105,8 @@ class Chess:
         self.player_colors[player] = tuple([int(x * INTENSITY) for x in color])
         self.board = [self.player_colors[player] for x in self.board]
         self.sender.send(self.board)
+        self.ambiente.set_color(player, self.player_colors[player])
+        self.ambiente.moving_slides_init(4)
 
     def pause(self):
         self.game_time[self.player] -= utime.ticks_diff(utime.ticks_ms(), self.time)
@@ -223,6 +225,7 @@ class OnboardControl():
 
         self.last_pause_time = utime.ticks_ms()
     def step(self, chess):
+
         b = self.black.read() < THRESHHOLD
         w = self.white.read() < THRESHHOLD
         m = self.mode.read() < THRESHHOLD
@@ -251,7 +254,7 @@ class OnboardControl():
                 answer = "tried to pause"
             #answer = "ModeButton"
         else:
-            answer = "nothing"+str(b)+str(w)+str(m)
+            answer = "nothing"+str(self.black.read())+str(self.white.read())+str(self.mode.read())
         self.b = b
         self.w = w
         self.m = m
@@ -262,7 +265,7 @@ async def main(chess, controller):
     #chess = Chess()
     while True:
         TouchCommand = controller.step(chess)
-        print(TouchCommand)
+        #print(TouchCommand)
         chess.step()
         await asyncio.sleep_ms(10)
 
