@@ -5,10 +5,10 @@ import urandom
 
 PIN = 4
 NUM_PIXEL = 250
-MAX_ITENSITY = 160
-V_MIN = -10
-V_MAX = 10
-MAX_ZEIGER = 200
+MAX_ITENSITY = 190
+V_MIN = -15
+V_MAX = 15
+MAX_ZEIGER = 125
 MIN_ZEIGER = 1
 
 
@@ -39,8 +39,12 @@ class KreisAuge:
         self.change = False
         self.step_time = 100
         self.last_step = ticks_ms()
-
-        self.n = 20
+        self.reset_zeiger()
+        #self.mass_bias = randint(1,100)/100.
+    def reset_zeiger(self, n = 20):
+        self.n = n
+        for i in range(NUM_PIXEL):
+            self.np[i] = (0, 0, 0)
         self.zeiger_pos = [i * NUM_PIXEL // self.n for i in range(self.n)]
         self.zeiger_v = [randint(V_MIN, V_MAX) for _ in range(self.n)]
         for i in range(len(self.zeiger_v)):
@@ -49,9 +53,18 @@ class KreisAuge:
         self.zeiger_color = [hsv_to_rgb(randint(0,360), 1, 1) for _i in range(self.n)]
         self.zeiger_counter = [0 for _ in range(self.n)]
 
+        for i in range(self.n):
+            self.np[self.zeiger_pos[i]] = self.zeiger_color[i]
+            self.np.write()
+            sleep_ms(20)
+
     def step(self, ticks):
+        if abs(ticks - self.last_step) >600000:
+            self.reset_zeiger(randint(MIN_ZEIGER,MAX_ZEIGER))
+            self.last_step = ticks_ms()
         for i in range(self.n):
             if self.zeiger_v[i] == 0:
+                #Why can a pixel have 0 Velocity?
                 continue
             self.zeiger_counter[i] = (self.zeiger_counter[i] + 1 ) % abs(self.zeiger_v[i])
             if self.zeiger_counter[i] == 0:
@@ -60,16 +73,19 @@ class KreisAuge:
             self.np[i] = (0,0,0)
 
         i = 0
+        mass_bias = math.cos(ticks/30000)+1
         while i < self.n:
             if i >= len(self.zeiger_pos):
                 print("Should never happen, but who knows")
                 break
             if sum(self.np[self.zeiger_pos[i]]) > 0:
-                if randint(0,10) >= 9: #Check, if we want to add or remove a Zeiger
+                if randint(0,10) >= 8: #Check, if we want to add or remove a Zeiger
                     urandom_event = randint(MIN_ZEIGER, MAX_ZEIGER)
-                    if urandom_event > self.n: #Adding
+                    if urandom_event *mass_bias > self.n: #Adding
                         self.add_zeiger(pos=self.zeiger_pos[i])
+                        self.np[self.zeiger_pos[i]] = (MAX_ITENSITY,MAX_ITENSITY, MAX_ITENSITY)
                     elif urandom_event < self.n: # Removing
+                        self.np[self.zeiger_pos[i]] = (0, 0, 0)
                         self.remove_zeiger(i)
                         continue
             else:
