@@ -11,7 +11,7 @@ for id in PIN_IDS:
 def strobo():
     for pin in PINS:
         pin.on()
-    utime.sleep_ms(5)
+    utime.sleep_ms(20)
     for pin in PINS:
         pin.off()
 
