@@ -25,8 +25,8 @@ unsigned long g_last_packet_time = 0;
 // Wifi Setting
 
 //Wifi settings
-const char* ssid = "Incubator";
-const char* password = "Fl4mongo";
+const char* ssid = "UhrControl";
+const char* password = "zeitreise12";
 
 
 // connect to wifi – returns true if successful or false if not
