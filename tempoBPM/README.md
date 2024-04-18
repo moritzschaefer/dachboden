@@ -4,9 +4,10 @@
 For the control panel project of MitDir2024. 
 The user has to tap a button with the tempo of the live music. When the right tempo is tapped during 15sec, then the tasks is valided. 
 
-
+Interesting python librairies for the project:
 - [librosa](https://pypi.org/project/librosa/)
 - [taptempo](https://pypi.org/project/taptempo/)
+- [aubio](https://aubio.org/) used also for the [dachboden quallen](https://github.com/moritzschaefer/dachboden/tree/master/quallen/steuersoftware). Tempo and beat tracking as feature.
 
 ## Hardware
 - Arcade button
@@ -17,8 +18,8 @@ The user has to tap a button with the tempo of the live music. When the right te
 
 ## Tasks
 1. Beat Erkennung (von laufender Musik)
-    - Librarie finden: Milan/Dachgit ; [librosa](https://pypi.org/project/librosa/)
-    - Librarie anpassen
+    - Librarie finden: [aubio](https://aubio.org/) ; [librosa](https://pypi.org/project/librosa/)
+    - Librairie anpassen
     - Bauteile/Schaltung finden/ausdenken
         - piezo (hohe lautstärke, mikro empfindlich)
     - Sound Aufnahme / Signalverarbeitung lösen
@@ -28,3 +29,5 @@ The user has to tap a button with the tempo of the live music. When the right te
         - z.B. 7-Segment display
 3. Matching Algorithmus Berechnung/Erkennung
 4. Integration des Rätsels in CP
+
+Ask ChatGPT to write an algorithm, see here: https://chat.openai.com/share/ad60b325-c608-4745-8155-205fedea27d4
