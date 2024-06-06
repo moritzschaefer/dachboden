@@ -17,14 +17,25 @@ Interesting python librairies for the project:
 - Mic to get the music as input? 
 
 ## Tasks
-1. Beat Erkennung (von laufender Musik)
-    - Librarie finden: [aubio](https://aubio.org/) ; [librosa](https://pypi.org/project/librosa/)
-    - Librairie anpassen
-    - Bauteile/Schaltung finden/ausdenken
+1. Beat Erkennung 
+    - [x] Library finden: 
+        [aubio](https://aubio.org/) ; 
+        -> Probleme mit pip (dep. veraltet)
+        [librosa](https://pypi.org/project/librosa/)
+    1.1 Song-Erkennung
+    - [x] mit Songs (mp3 files)
+        - siehe: "beatdetect.py"
+    1.2 von laufender Musik
+    - [ ] Sound Aufnahme / Signalverarbeitung lösen
+    - [ ] Library anpassen:
+        - [ ] realtime sound analyse
+        - [ ] Optimierung
+    - [ ] Bauteile/Schaltung finden/ausdenken
         - piezo (hohe lautstärke, mikro empfindlich)
-    - Sound Aufnahme / Signalverarbeitung lösen
-2. Beat Berechnung (Tap)- Script getbpm.py 
-    - eventuell Portierung C++ je nach HW Entscheidung
+2. Beat Berechnung (Tap)- 
+    - [x] Testskript
+        - Script getbpm.py 
+    //- eventuell Portierung C++ je nach HW Entscheidung
     - Bauteile/Schaltung finden/ausdenken
         - z.B. 7-Segment display
 3. Matching Algorithmus Berechnung/Erkennung
