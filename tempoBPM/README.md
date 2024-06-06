@@ -31,3 +31,11 @@ Interesting python librairies for the project:
 4. Integration des Rätsels in CP
 
 Ask ChatGPT to write an algorithm, see here: https://chat.openai.com/share/ad60b325-c608-4745-8155-205fedea27d4
+
+# Notizen
+- sich zu dem Raspberrz Pi zu verbinden: ssh tempo
+- Hostname aendern: cat .ssh/config 
+- Raspberry Pi Pin header: https://www.raspberrypi.com/documentation/computers/raspberry-pi.html
+- Python Library: https://pypi.org/project/RPi.GPIO/
+- Der - geht auf ground
+- Shutdown: sudo shutdown 0
