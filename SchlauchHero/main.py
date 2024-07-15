@@ -22,9 +22,9 @@ THRESHHOLD = 150
 PIXELS = 5*60
 VERBOSE = False
 
-def smart_print(string):
+def smart_print(string, *args):
     if VERBOSE:
-        print(string)
+        print(string, *args)
         
 class SchlauchHero:
     colors=[(200,0,0), (0,200,0), (0,0,200), (200,0,200), (200,200,200), (0,0,0)]
@@ -60,7 +60,7 @@ class SchlauchHero:
     def restart(self):
         self.mode = "live"
         self.time_progress = 0
-        self.life = 5
+        self.life = 10
         self.score = 0
         self.cur_generation_width = 0
         self.cur_generation_color = 4
