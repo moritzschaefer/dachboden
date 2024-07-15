@@ -11,11 +11,10 @@ def rand():
 def randint(a, b):
     return (rand() % (b - a)) + a
 
-DATA_PIN = 4
+DATA_PIN = 13
 #TOUCHPINS 0,2,4,12,13,14,15,27,32,33
-LED_PINS = [13]
 INPUT_PINS = [5, 16,17,18]
-PINS_SETTING = [21,22,23,25]
+PINS_SETTING = [21,22,23,25] #Pins: Y: 21 B: 22, R: 23  Green:25
 LIFE_PINS = [25, 26]
 SCORE_PINS = [32, 33]
 THRESHHOLD = 150
@@ -27,11 +26,15 @@ def smart_print(string, *args):
         print(string, *args)
         
 class SchlauchHero:
-    colors=[(200,0,0), (0,200,0), (0,0,200), (200,0,200), (200,200,200), (0,0,0)]
-    level_speed = [100, 75, 50, 25, 10]
+    # 0, 200, 200 -> lila  (200,0,200) -> teal
+    # -> (GRB)
+    
+    colors=[(200,200,0), (0,0,200), (0,200,0), (200,0,50),   (200,200,200), (0,0,0)]
+    level_speed = [100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 5]
     ball_speed = 5
-    width = 10
-    light = 0
+    width = (7,20)
+    light = 1
+    level_length = 10
     def __init__(self):
         self.int_board = [4 for i in range(PIXELS)]
         self.board = [self.colors[i] for i in self.int_board]
@@ -97,7 +100,6 @@ class SchlauchHero:
             if self.int_board[self.light] == pressed[0]:
                 smart_print("You Scored a Point", self.score)
                 # Correct
-                self.int_board[self.light] = 4 # Some reward
                 self.score += 1
                 self.update_score()
                 self.point_sequence(pressed[0])
@@ -106,11 +108,11 @@ class SchlauchHero:
                 smart_print("You lost a life", self.life)
                 self.life -= 1
                 self.update_life()
-                self.point_sequence(-1)
                 if self.life <= 0:
                     self.loose_sequence()
                     self.restart()
-
+                else:
+                    self.wrong_sequence(pressed[0])
 
     def loose_sequence(self):
         # Let all lights strobe
@@ -129,9 +131,32 @@ class SchlauchHero:
             utime.sleep_ms(25)
 
     def point_sequence(self, color):
-        # Send the color as a ball in opposite direction
-        for i in range(self.ball_width):
-            self.ball_board[i] = color
+        
+        # Remove the color width
+        w = 0
+        while w < PIXELS //5:
+            if self.int_board[w+self.light] != color:
+                break
+            else:
+                self.int_board[w+self.light] = -1
+            w += 1
+
+        # Send the remaining color as a ball in opposite direction
+        for i in range(w):
+            self.ball_board[i + self.light] = color
+            
+    def wrong_sequence(self, color):
+        for _ in range(5):
+            for i in range(self.ball_width):
+                self.board[i] = self.colors[color]
+            self.sender.send(self.board)
+            utime.sleep_ms(25)
+            for i in range(self.ball_width):
+                self.board[i] = self.colors[-1]
+            self.sender.send(self.board)
+            utime.sleep_ms(25)
+        
+            
 
     def merge_ball_and_board(self):
         for i in range(PIXELS):
@@ -144,25 +169,27 @@ class SchlauchHero:
         for i in range(1, PIXELS):
             self.ball_board[PIXELS - i] = self.ball_board[PIXELS - i - 1]
         self.ball_board[0] = -1
+        
     def move_color(self):
         # Move the light, randomly spawn a new color
         for i in range(PIXELS-1):
             self.int_board[i] = self.int_board[i+1]
-            #self.board[i] = self.colors[self.int_board[i]]
 
-        if self.cur_generation_width <= 0:
-            if randint(0,100) > 25:
+        if self.cur_generation_width < 0:
+            if randint(0,100) > 15:
                 if len(self.current_colors) == 0:
                     self.cur_generation_color = randint(0,4)
                 else:
                     self.cur_generation_color = self.current_colors[randint(0,len(self.current_colors))]
-                self.cur_generation_width = self.width
             else:
                 # Generate some dark pixels
                 self.cur_generation_color = -1
-                self.cur_generation_width = self.width // 2
+            self.cur_generation_width = randint(self.width[0],self.width[1])
             smart_print("Added new Color: ", self.cur_generation_color)
-        self.int_board[PIXELS-1] = self.cur_generation_color
+        elif self.cur_generation_width == 0:
+            self.int_board[PIXELS-1] = -1
+        else:
+            self.int_board[PIXELS-1] = self.cur_generation_color
         #self.board[PIXELS-1] = self.colors[self.cur_generation_color]
         self.cur_generation_width -= 1
 
@@ -187,7 +214,7 @@ class SchlauchHero:
                 self.check_correct(command)
 
             # Check if time is ready to move the light
-            if utime.ticks_ms() - self.time > self.level_speed[min(self.score//10,len(self.level_speed))]:
+            if utime.ticks_ms() - self.time > self.level_speed[min(self.score//10,len(self.level_speed)-1)]:
                 self.time = utime.ticks_ms()
                 self.move_color()
                 self.change = 1
