@@ -44,9 +44,21 @@ Interesting python librairies for the project:
 Ask ChatGPT to write an algorithm, see here: https://chat.openai.com/share/ad60b325-c608-4745-8155-205fedea27d4
 
 # Notizen
+- Model: Raspberry Pi 3 Model B Rev 1.2
 - sich zu dem Raspberrz Pi zu verbinden: ssh tempo
 - Hostname aendern: cat .ssh/config 
 - Raspberry Pi Pin header: https://www.raspberrypi.com/documentation/computers/raspberry-pi.html
 - Python Library: https://pypi.org/project/RPi.GPIO/
 - Der - geht auf ground
 - Shutdown: sudo shutdown 0
+
+Ground to negative
+Power to positive
+
+LED 22
++ to the GPIO (22)
+- to ground 
+Button 18
+com to ground
+no to gpio
+
