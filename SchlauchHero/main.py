@@ -23,10 +23,11 @@ PIXELS = 5*60
 
 class SchlauchHero:
     colors=[(200,0,0), (0,200,0), (0,0,200), (200,0,200), (200,200,200), (0,0,0)]
-    level_speed = [500, 250, 100, 50, 25, 10]
+    level_speed = [250, 200, 150, 100, 75, 50, 25, 10, 9, 8, 7, 6, 5]
     ball_speed = 5
     width = 10
     light = 0
+    lights = [0,1,2,3]
     def __init__(self):
         self.int_board = [4 for i in range(PIXELS)]
         self.board = [self.colors[i] for i in self.int_board]
@@ -35,10 +36,12 @@ class SchlauchHero:
         self.life_monitor = tm1637.TM1637(clk=machine.Pin(LIFE_PINS[0]), dio=machine.Pin(LIFE_PINS[1]))
         self.sender.send(self.board)
         self.restart()
+        self.update_score()
         self.current_colors = [0, 1, 2, 3]
         self.ball_width = 8
         self.ball_board = [-1 for _ in range(PIXELS)] # Stores color and pos of ball
         self.change = 0
+
     def update_score(self):
         self.score_monitor.number(self.score)
 
@@ -62,7 +65,7 @@ class SchlauchHero:
         self.time = utime.ticks_ms()
         self.button_time = utime.ticks_ms()
         self.ball_time = utime.ticks_ms()
-        self.update_score()
+        #self.update_score() display old highscore
         self.update_life()
 
     def pause(self):
@@ -88,9 +91,10 @@ class SchlauchHero:
         if len(pressed) == 1:
             self.button_time = utime.ticks_ms()
             # Single Button press
-            if self.int_board[self.light] == pressed[0]:
+
+            if any([self.int_board[l]==pressed[0] for l in self.lights]):
                 # Correct
-                self.int_board[self.light] = 4 # Some reward
+                #self.int_board[self.light] = 4 # Some reward
                 self.score += 1
                 self.update_score()
                 self.point_sequence(pressed[0])
@@ -108,7 +112,7 @@ class SchlauchHero:
         for i in range(PIXELS):
             self.ball_board[i] = -1
             self.int_board[i] = -1
-        for _ in range(5):
+        for _ in range(20):
             for i in range(PIXELS):
                 self.board[i] = self.colors[-2]
             self.sender.send(self.board)
@@ -134,6 +138,7 @@ class SchlauchHero:
         for i in range(1, PIXELS):
             self.ball_board[PIXELS - i] = self.ball_board[PIXELS - i - 1]
         self.ball_board[0] = -1
+
     def move_color(self):
         # Move the light, randomly spawn a new color
         for i in range(PIXELS-1):
